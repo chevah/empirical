@@ -26,14 +26,15 @@ from zope.interface import implements
 
 from chevah.compat import DefaultAvatar, system_users
 from chevah.compat.test_filesystem import LocalTestFilesystem
-
+from chevah.empirical.constants import (
+    TEST_NAME_MARKER,
+    )
 from chevah.utils.avatar import ApplicationAvatar, OSAvatar
 from chevah.utils.configuration_file import (
     FileConfigurationProxy,
     )
 from chevah.utils.constants import (
     LOG_SECTION_DEFAULTS,
-    TEST_NAME_MARKER,
     )
 from chevah.utils.credentials import (
     PasswordCredentials,
