@@ -25,7 +25,7 @@ from twisted.web import (
 from zope.interface import implements
 
 from chevah.compat import DefaultAvatar, system_users
-from chevah.compat.test_filesystem import LocalTestFilesystem
+from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.empirical.constants import (
     TEST_NAME_MARKER,
     )
