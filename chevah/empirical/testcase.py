@@ -1197,7 +1197,7 @@ def setup_os(users, groups):
     Add users, groups, create temporary folders and other things required
     by the testing system.
     '''
-    from chevah.compat.platform import OSAdministration
+    from chevah.compat.administration import OSAdministration
 
     os_administration = OSAdministration()
     for group in groups:
@@ -1213,7 +1213,7 @@ def setup_os(users, groups):
 def teardown_os(users, groups):
     '''Revert changes from setUpOS.'''
 
-    from chevah.compat.platform import OSAdministration
+    from chevah.compat.administration import OSAdministration
 
     os_administration = OSAdministration()
 

@@ -620,7 +620,7 @@ class TestSSLContextFactory(object):
 
 
 class ChevahCommonsFactory(object):
-    '''This class creates objects from chevah.commons module.
+    '''This class creates objects from chevah.utils module.
 
     It is designed to help with the tests and creating 'mock' objects.
     '''
