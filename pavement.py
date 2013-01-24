@@ -15,7 +15,7 @@ EXTRA_PACKAGES = [
     'chevah-utils==0.3.5',
     ]
 
-from chevah.brink.pavement_commons import (
+from brink.pavement_commons import (
     _p,
     buildbot_list,
     buildbot_try,
