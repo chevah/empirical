@@ -8,7 +8,7 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.8.0'
+BRINK_VERSION = '0.8.1'
 
 EXTRA_PACKAGES = [
     'chevah-compat==0.3.2',
