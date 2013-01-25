@@ -427,7 +427,7 @@ class ChevahTestCase(TwistedTestCase):
 
     def setUp(self):
         super(ChevahTestCase, self).setUp()
-        self.home_folder_segments = None
+        self.test_segments = None
         self.Bunch = Bunch
         self.Contains = Contains
         self.os_name = os.name
@@ -515,9 +515,12 @@ class ChevahTestCase(TwistedTestCase):
         return success
 
     def tearDown(self):
-        if self.home_folder_segments:
-            factory.fs.deleteFolder(
-                self.home_folder_segments, recursive=True)
+        if self.test_segments:
+            if factory.fs.isFolder(self.test_segments):
+                factory.fs.deleteFolder(
+                    self.test_segments, recursive=True)
+            if factory.fs.isFile(self.test_segments):
+                factory.fs.deleteFile(self.test_segments)
         # FIXME:922:
         # Move all filesystem checks into a specialized class
         self.assertTempIsClean()
