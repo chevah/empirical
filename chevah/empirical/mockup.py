@@ -4,9 +4,7 @@ from __future__ import with_statement
 
 from StringIO import StringIO
 from threading import currentThread, Thread, Timer
-import base64
 import BaseHTTPServer
-import logging
 import os
 import random
 import string
@@ -28,37 +26,6 @@ from chevah.compat import DefaultAvatar, system_users
 from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.empirical.constants import (
     TEST_NAME_MARKER,
-    )
-from chevah.utils.avatar import ApplicationAvatar, OSAvatar
-from chevah.utils.configuration_file import (
-    FileConfigurationProxy,
-    )
-from chevah.utils.constants import (
-    LOG_SECTION_DEFAULTS,
-    )
-from chevah.utils.credentials import (
-    PasswordCredentials,
-    FTPPasswordCredentials,
-    FTPSPasswordCredentials,
-    HTTPBasicAuthCredentials,
-    HTTPSBasicAuthCredentials,
-    SSHKeyCredentials,
-    SSHPasswordCredentials,
-    SSLCertificateCredentials,
-    )
-from chevah.utils.event import (
-    EventDefinition,
-    EventGroupDefinition,
-    EventsDefinition,
-    )
-from chevah.utils.json_file import JSONFile
-from chevah.utils.json_rpc import JSONRPCResource
-from chevah.utils.logger import (
-    _Logger,
-    LogEntry,
-    )
-from chevah.utils.log_configuration_section import (
-    LogConfigurationSection,
     )
 
 
@@ -667,46 +634,6 @@ class ChevahCommonsFactory(object):
         self.__class__._unique_id += 1
         return self.__class__._unique_id
 
-    def _makeGenericPasswordCredentials(self,
-            credentials_class,
-            username=None, password=None, token=None,
-            ):
-        '''Create PasswordCredentials.'''
-        if username is None:
-            username = self.username
-        else:
-            username = unicode(username)
-
-        if password is not None:
-            password = unicode(password)
-
-        credentials = credentials_class(
-            username=username,
-            password=password,
-            )
-
-        return credentials
-
-    def makeFTPPasswordCredentials(self, *args, **kwargs):
-        return self._makeGenericPasswordCredentials(
-            FTPPasswordCredentials, *args, **kwargs)
-
-    def makeFTPSPasswordCredentials(self, *args, **kwargs):
-        return self._makeGenericPasswordCredentials(
-            FTPSPasswordCredentials, *args, **kwargs)
-
-    def makeSSHPasswordCredentials(self, *args, **kwargs):
-        return self._makeGenericPasswordCredentials(
-            SSHPasswordCredentials, *args, **kwargs)
-
-    def makeHTTPBasicAuthCredentials(self, *args, **kwargs):
-        return self._makeGenericPasswordCredentials(
-            HTTPBasicAuthCredentials, *args, **kwargs)
-
-    def makeHTTPSBasicAuthCredentials(self, *args, **kwargs):
-        return self._makeGenericPasswordCredentials(
-            HTTPSBasicAuthCredentials, *args, **kwargs)
-
     def makeToken(self, credentials):
         """
         Generate the Windows token for credentials.
@@ -726,124 +653,6 @@ class ChevahCommonsFactory(object):
                 u'Failed to get a valid token for "%s" with "%s".' % (
                     credentials.username, credentials.password))
         return token
-
-    def makePasswordCredentials(self,
-            username=None, password=None, token=None,
-            ):
-        '''Create PasswordCredentials.'''
-        if username is None:
-            username = self.getUniqueString()
-        else:
-            username = unicode(username)
-
-        if password is not None:
-            password = unicode(password)
-
-        credentials = PasswordCredentials(
-            username=username,
-            password=password,
-            )
-        return credentials
-
-    def makeSSHKeyCredentials(self,
-            username=None,
-            key=None,
-            key_algorithm=None, key_data=None, key_signed_data=None,
-            key_signature=None,
-            *args, **kwargs
-            ):
-
-        if username is None:
-            username = self.username
-        else:
-            username = unicode(username)
-
-        if key is not None:
-            key_parts = key.split()
-            key_algorithm = key_parts[0]
-            key_data = base64.decodestring(key_parts[1])
-
-        credentials = SSHKeyCredentials(
-            username=username,
-            key_algorithm=key_algorithm,
-            key_data=key_data,
-            key_signed_data=key_signed_data,
-            key_signature=key_signature,
-            *args, **kwargs
-            )
-
-        return credentials
-
-    def makeSSLCertificateCredentials(self,
-            username=None,
-            certificate=None,
-            *args, **kwargs
-            ):
-
-        if username is None:
-            username = self.username
-        else:
-            username = unicode(username)
-
-        credentials = SSLCertificateCredentials(
-            username=username,
-            certificate=certificate,
-            *args, **kwargs
-            )
-
-        return credentials
-
-    def makeOSAvatar(self, name=None,
-            home_folder_path=None, root_folder_path=None,
-            lock_in_home_folder=False,
-            token=None,
-            ):
-        """
-        Creates a valid OSAvatar.
-        """
-        if name is None:
-            name = self.username
-
-        if home_folder_path is None:
-            home_folder_path = self.fs.temp_path
-
-        return OSAvatar(
-            name=name,
-            home_folder_path=home_folder_path,
-            root_folder_path=root_folder_path,
-            lock_in_home_folder=lock_in_home_folder,
-            token=token,
-            )
-
-    def makeApplicationAvatar(self, name=None,
-            home_folder_path=None, root_folder_path=None,
-            ):
-        """
-        Creates a valid OSAvatar.
-        """
-        if name is None:
-            name = self.getUniqueString()
-
-        if home_folder_path is None:
-            home_folder_path = self.fs.temp_path
-
-        # Application avatars are locked inside home folders.
-        if root_folder_path is None:
-            root_folder_path = home_folder_path
-
-        return ApplicationAvatar(
-            name=name,
-            home_folder_path=home_folder_path,
-            root_folder_path=root_folder_path,
-            )
-
-    def makeLogEntry(self):
-        id = 100
-        text = u'Entry content ' + factory.getUniqueString()
-        avatar = self.makeApplicationAvatar()
-        peer = self.makeIPv4Address()
-        return LogEntry(
-            message_id=id, text=text, avatar=avatar, peer=peer)
 
     def makeLocalTestFilesystem(self, avatar=None):
         if avatar is None:
@@ -877,10 +686,6 @@ class ChevahCommonsFactory(object):
         '''Return a random valid filename.'''
         name = unicode(self.getUniqueInteger()) + TEST_NAME_MARKER
         return prefix + name + ('a' * (length - len(name))) + suffix
-
-    def makeJSONRPCResource(self):
-        '''Create a JSONRPCResource.'''
-        return JSONRPCResource()
 
     def makeIPv4Address(self, host='localhost', port=None, protocol='TCP'):
         """
@@ -954,92 +759,6 @@ class ChevahCommonsFactory(object):
         finally:
             cert_file.close()
         return certificate
-
-    def makeLogConfigurationSection(self, proxy=None):
-        if proxy is None:
-            content = (
-                '[log]\n'
-                'log_file: Disabled\n'
-                'log_syslog: Disabled\n'
-                )
-            proxy = self.makeFileConfigurationProxy(
-                content=content,
-                defaults=LOG_SECTION_DEFAULTS,
-                )
-
-        return LogConfigurationSection(proxy=proxy)
-
-    def makeFileConfigurationProxy(self, content=None, defaults=None):
-        if content is None:
-            content = ''
-        proxy_file = FileConfigurationProxy(
-            configuration_file=StringIO(content),
-            defaults=defaults)
-        proxy_file.load()
-        return proxy_file
-
-    def makeJSONFile(self, content=None, load=True):
-        """
-        Create a JSONFile.
-        """
-        json_file = JSONFile(file=StringIO(content))
-        if load:
-            json_file.load()
-        return json_file
-
-    def makeLogger(self, log_name=None):
-        result = _Logger()
-
-        if not log_name:
-            log_name = factory.getUniqueString()
-
-        result._log = logging.getLogger(log_name)
-        return result
-
-    def makeEventGroupDefinition(self, name=None, description=None):
-        """Creates an EventGroupDefinition."""
-        if name is None:
-            name = factory.getUniqueString()
-        if description is None:
-            description = factory.getUniqueString()
-
-        event_group = EventGroupDefinition(name=name, description=description)
-
-        return event_group
-
-    def makeEventDefinition(self, id=None, message=None, groups=None,
-            version_added=None, version_removed=None):
-        """Creates an EventGroupDefinition."""
-        if id is None:
-            id = factory.getUniqueString()
-        if message is None:
-            message = factory.getUniqueString()
-
-        event_definition = EventDefinition(
-            id=id,
-            message=message,
-            groups=groups,
-            version_added=version_added,
-            version_removed=version_removed,
-            )
-
-        return event_definition
-
-    def makeEventsDefinition(self,
-            configuration_file=None, content=None,
-            load=True,
-            ):
-        """Creates an EventHandler."""
-        if configuration_file is None:
-            if content is None:
-                content = u''
-            configuration_file = StringIO(content)
-
-        config = EventsDefinition(file=configuration_file)
-
-        if load:
-            config.load()
-        return config
 
     def encodePathToURI(self, path):
         """

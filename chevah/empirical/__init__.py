@@ -8,11 +8,9 @@ Here are a few import shortcuts.
 
 from chevah.empirical.testcase import (
     ChevahTestCase,
-    EventTestCase,
     )
 from chevah.empirical.mockup import factory
 
 # Silence the linter.
 ChevahTestCase
-EventTestCase
 factory
