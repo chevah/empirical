@@ -441,6 +441,12 @@ class ChevahTestCase(TwistedTestCase):
             class_name,
             self._testMethodName)
 
+    def getHostname(self):
+        """
+        Return the hostname of the current system.
+        """
+        return socket.gethostname()
+
     @classmethod
     def initialize(cls, drop_user):
         '''Initialize the testing environment.'''
@@ -548,8 +554,8 @@ class ChevahTestCase(TwistedTestCase):
         else:
             temp_avatar = DefaultAvatar()
 
-        temp_avatar.home_folder_path = factory.fs.temp_path
-        temp_avatar.root_folder_path = factory.fs.temp_path
+        temp_avatar._home_folder_path = factory.fs.temp_path
+        temp_avatar._root_folder_path = factory.fs.temp_path
 
         temp_filesystem = LocalFilesystem(avatar=temp_avatar)
         dirty = False

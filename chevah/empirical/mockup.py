@@ -662,11 +662,6 @@ class ChevahCommonsFactory(object):
 
         return LocalTestFilesystem(avatar=avatar)
 
-    def makeTestRunnerFilesystem(self):
-        '''Create a local test filesystem for the user under which the
-        tests are executed.'''
-        return LocalTestFilesystem(avatar=DefaultAvatar())
-
     _local_test_filesystem = None
 
     @property
@@ -674,7 +669,7 @@ class ChevahCommonsFactory(object):
         '''Return the default local test filesystem.'''
         if self.__class__._local_test_filesystem is None:
             self.__class__._local_test_filesystem = (
-                self.makeTestRunnerFilesystem())
+                LocalTestFilesystem(avatar=DefaultAvatar()))
         return self.__class__._local_test_filesystem
 
     @property

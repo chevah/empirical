@@ -11,7 +11,7 @@ import sys
 BRINK_VERSION = '0.9.0'
 
 EXTRA_PACKAGES = [
-    'chevah-compat==0.5.0-adi1',
+    'chevah-compat==0.5.0-adi3',
     ]
 
 from brink.pavement_commons import (
