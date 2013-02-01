@@ -664,10 +664,15 @@ class ChevahTestCase(TwistedTestCase):
             self.assertIsFailure(failure_or_deferred)
             failure = failure_or_deferred.result
 
-        if failure.value.id != failure_id:
+        try:
+            actual_id = getattr(failure.value, 'id')
+        except:
+            actual_id = getattr(failure.value, 'event_id')
+
+        if actual_id != failure_id:
             raise AssertionError(
                 u'Failure id for %s is not %s, but %s' % (
-                    failure, str(failure_id), str(failure.value.id)))
+                    failure, str(failure_id), str(actual_id)))
 
     def assertFailureData(self, data, failure_or_deferred):
         """
@@ -680,7 +685,10 @@ class ChevahTestCase(TwistedTestCase):
             failure = failure_or_deferred.result
 
         failure_data = failure.value.data
-        failure_id = failure.value.id
+        try:
+            failure_id = getattr(failure.value, 'id')
+        except:
+            failure_id = getattr(failure.value, 'event_id')
 
         self._checkData(
             kind=u'Failure',
@@ -693,10 +701,15 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise assertion error if exception does not have the required id.
         """
-        if exception.id != exception_id:
+        try:
+            actual_id = getattr(exception, 'id')
+        except:
+            actual_id = getattr(exception, 'event_id')
+
+        if actual_id != exception_id:
             raise AssertionError(
                 u'Exception id for %s is not %s, but %s' % (
-                    exception, str(exception_id), str(exception.id)))
+                    exception, str(exception_id), str(actual_id)))
 
     def _checkData(self, kind, kind_id, expected_data, current_data):
         """
@@ -728,9 +741,14 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise assertion error if exception does not contain the required data.
         """
+        try:
+            actual_id = getattr(exception, 'id')
+        except:
+            actual_id = getattr(exception, 'event_id')
+
         self._checkData(
             kind=u'Exception',
-            kind_id=exception.id,
+            kind_id=actual_id,
             expected_data=data,
             current_data=exception.data,
             )
