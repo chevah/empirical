@@ -26,6 +26,7 @@ from brink.pavement_commons import (
     merge_init,
     merge_commit,
     pave,
+    pqm,
     SETUP,
     test,
     test_remote,
@@ -44,6 +45,7 @@ help
 lint
 merge_init
 merge_commit
+pqm
 test
 test_remote
 test_normal
