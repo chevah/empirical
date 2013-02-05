@@ -21,11 +21,14 @@ def threaded_reactor():
     global _twisted_thread
     try:
         from twisted.internet import reactor
+        # This is ugly and stupid, but I have no idea how to reset
+        # the reactor.
+        reactor.__init__()
     except ImportError:
         return None, None
     if not _twisted_thread:
 
-        _twisted_thread = Thread(target=lambda: reactor.run( \
+        _twisted_thread = Thread(target=lambda: reactor.run(
                 installSignalHandlers=False))
         _twisted_thread.setDaemon(True)
         _twisted_thread.start()

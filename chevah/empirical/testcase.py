@@ -17,14 +17,19 @@ from mock import patch
 from nose import SkipTest
 from twisted.internet.defer import Deferred
 from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
-from twisted.python import threadable
 from twisted.python.failure import Failure
-# Workaround for twisted reactor restart.
-threadable.registerAsIOThread()
-from unittest2 import TestCase
+
+# For Python below 2.7 we use the separate unittest2 module.
+# It comes by default in Pthon 2.7.
+if sys.version_info[0:2] < (2, 7):
+    from unittest2 import TestCase
+    # Shut up you linter.
+    TestCase
+else:
+    from unittest import TestCase
+
 from zope.interface.verify import verifyObject
 import simplejson as json
-
 
 from chevah.compat import (
     DefaultAvatar,
@@ -153,8 +158,9 @@ class TwistedTestCase(TestCase):
         self._reactor_timeout_call = reactor.callLater(
             timeout, self._raiseReactorTimeoutError, timeout)
 
-        # Fake a reactor start/restart.
-        reactor.fireSystemEvent('startup')
+        reactor._startedBefore = False
+        reactor._started = False
+        reactor.startRunning()
 
         if have_thread:
             # Thread are always hard to sync, and this is why we need to
@@ -171,6 +177,15 @@ class TwistedTestCase(TestCase):
             # Everything fine, disable timeout.
             if not self._reactor_timeout_call.cancelled:
                 self._reactor_timeout_call.cancel()
+
+        # Let the reactor know that we want to stop reactor.
+        reactor.stop()
+        # Let the reactor run one more time to execute the stop code.
+        reactor.iterate()
+
+        # Set flag to fake a clean reactor.
+        reactor._startedBefore = False
+        reactor._started = False
 
     def assertReactorIsClean(self):
         """
@@ -584,14 +599,19 @@ class ChevahTestCase(TwistedTestCase):
         if not value is True:
             raise AssertionError('%s is not True.' % str(value))
 
-    def assertIsInstance(self, expected_type, value):
+    def assertIsInstance(self, expected_type, value, msg=None):
         """
         Raise an expection if `value` is not an instance of `expected_type`
         """
+        # In Python 2.7 isInstance is already defined, but with swapped
+        # arguments.
+        if not inspect.isclass(expected_type):
+            expected_type, value = value, expected_type
+
         if not isinstance(value, expected_type):
             raise AssertionError(
-                "Expecting type %s, but got %s." % (
-                    expected_type, type(value)))
+                "Expecting type %s, but got %s. %s" % (
+                    expected_type, type(value), msg))
 
     def assertIsListening(self, ip, port, debug=False, clear_log=False):
         '''Check if the port and address are in listening mode.'''

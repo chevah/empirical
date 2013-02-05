@@ -2,6 +2,7 @@
 '''Module containing helpers for testing the Chevah server.'''
 from __future__ import with_statement
 
+from select import error as SelectError
 from StringIO import StringIO
 from threading import currentThread, Thread, Timer
 import base64
@@ -111,7 +112,10 @@ class MockHTTPServer(object):
     def _serve_page(self):
         '''Server a request while the server should still run.'''
         while not self._stopped:
-            self._server.handle_request()
+            try:
+                self._server.handle_request()
+            except SelectError, error:
+                pass
 
     def _force_close(self):
         '''Do what it takes to close and clear the server.'''
@@ -129,6 +133,7 @@ class MockHTTPServer(object):
 
     def __exit__(self, exc_type, exc_value, tb):
         self._stopped = True
+        self._server_timeout.cancel()
         try:
             # Try to close the thread now
             self._server_process.join(0.01)
