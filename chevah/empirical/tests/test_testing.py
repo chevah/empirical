@@ -36,26 +36,6 @@ class TestTestingInfrastructure(ChevahTestCase):
 class TestFactory(ChevahTestCase):
     '''Test for factory methods.'''
 
-    def test_credentials_unicode(self):
-        """
-        Make sure that credentials are created as unicode.
-        """
-        creds = factory.makePasswordCredentials(
-            username='user',
-            password='pass',
-            token='don-t update',
-            )
-        self.assertTrue(type(creds.username) is unicode)
-        self.assertTrue(type(creds.password) is unicode)
-
-    def test_avatar_unicode(self):
-        """
-        Check that avatar is created with unicode members.
-        """
-        avatar = factory.makeApplicationAvatar()
-        self.assertTrue(type(avatar.name) is unicode)
-        self.assertTrue(type(avatar.home_folder) is unicode)
-
     def test_getUniqueString(self):
         """
         getUniqueString will return different values at each call.
