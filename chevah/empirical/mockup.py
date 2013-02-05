@@ -114,7 +114,9 @@ class MockHTTPServer(object):
         while not self._stopped:
             try:
                 self._server.handle_request()
-            except SelectError, error:
+            except SelectError:
+                # I don't know why this error is raised on Python 2.7.
+                # I will just ignore it for now.
                 pass
 
     def _force_close(self):
