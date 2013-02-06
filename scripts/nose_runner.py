@@ -44,4 +44,7 @@ if __name__ == '__main__':
             print "There are still active threads: %s" % threads
         # We do a brute force exit here, since sys.exit will wait for
         # unjoined threads.
+        # Don't forget to flush the toilet.
+        sys.stdout.flush()
+        sys.stderr.flush()
         os._exit(error.code)
