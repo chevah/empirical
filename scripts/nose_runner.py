@@ -4,6 +4,7 @@
 
 This is needed since on Unix the tests are executed using sudo.
 '''
+import os
 import sys
 
 from nose.core import main as nose_main
@@ -30,7 +31,17 @@ if __name__ == '__main__':
     new_argv = ['chevah-test-runner']
     new_argv.extend(sys.argv[2:])
     sys.argv = new_argv
-    nose_main(addplugins=[
+    plugins = [
         TestTimer(),
         RunReporter(),
-        ])
+        ]
+    try:
+        nose_main(addplugins=plugins)
+    except SystemExit, error:
+        import threading
+        threads = threading.enumerate()
+        if len(threads) > 1:
+            print "There are still active threads: %s" % threads
+        # We do a brute force exit here, since sys.exit will wait for
+        # unjoined threads.
+        os._exit(error.code)
