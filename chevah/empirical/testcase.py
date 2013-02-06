@@ -125,6 +125,11 @@ class TwistedTestCase(TestCase):
             # and removeAll will fail since it detects that internal state
             # is changed from other source.
             pass
+
+        # FIXME:1069:
+        # The cancel method of the deferreds should be called from the
+        # main Twisted tread. At the moment we call cancel from two threads
+        # and we get AlreadyCancelled exceptions.
         reactor.threadCallQueue = []
         for delayed_call in reactor.getDelayedCalls():
             if delayed_call.active():
