@@ -449,11 +449,20 @@ class ChevahTestCase(TwistedTestCase):
             # FIXME:1077:
             # For now we don't clean the whole reactor so Twisted is
             # an exception here.
-            if not threads[1].getName().startswith(
-                    'PoolThread-twisted.internet.reactor'):
+            for thread in threads:
+                thread_name = thread.getName()
+                if thread_name == 'MainThread':
+                    continue
+                if thread_name == 'threaded_reactor':
+                    continue
+                if thread_name.startswith(
+                        'PoolThread-twisted.internet.reactor'):
+                    continue
+
                 raise AssertionError(
                     'There are still active threads, '
-                    'beside the main thread: %s' % (threads))
+                    'beside the main thread: %s - %s' % (
+                        thread_name, threads))
 
         super(ChevahTestCase, self).tearDown()
 
