@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from StringIO import StringIO
 from time import sleep
 import inspect
+import threading
 import os
 import socket
 import sys
@@ -432,6 +433,27 @@ class ChevahTestCase(TwistedTestCase):
         self.os_name = os.name
         self.Patch = patch
 
+    def tearDown(self):
+        if self.test_segments:
+            if factory.fs.isFolder(self.test_segments):
+                factory.fs.deleteFolder(
+                    self.test_segments, recursive=True)
+            if factory.fs.isFile(self.test_segments):
+                factory.fs.deleteFile(self.test_segments)
+        # FIXME:922:
+        # Move all filesystem checks into a specialized class
+        self.assertTempIsClean()
+
+        threads = threading.enumerate()
+        if len(threads) > 1:
+            if not threads[1].getName().startswith(
+                    'PoolThread-twisted.internet.reactor'):
+                raise AssertionError(
+                    'There are still active threads, '
+                    'beside the main thread: %s' % (threads))
+
+        super(ChevahTestCase, self).tearDown()
+
     def shortDescription(self):
         """
         The short description for the test.
@@ -518,18 +540,6 @@ class ChevahTestCase(TwistedTestCase):
         if success is None:
             raise AssertionError(u'Failed to find "success" attribute.')
         return success
-
-    def tearDown(self):
-        if self.test_segments:
-            if factory.fs.isFolder(self.test_segments):
-                factory.fs.deleteFolder(
-                    self.test_segments, recursive=True)
-            if factory.fs.isFile(self.test_segments):
-                factory.fs.deleteFile(self.test_segments)
-        # FIXME:922:
-        # Move all filesystem checks into a specialized class
-        self.assertTempIsClean()
-        super(ChevahTestCase, self).tearDown()
 
     @contextmanager
     def listenPort(self, ip, port):
