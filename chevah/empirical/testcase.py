@@ -446,6 +446,9 @@ class ChevahTestCase(TwistedTestCase):
 
         threads = threading.enumerate()
         if len(threads) > 1:
+            # FIXME:1077:
+            # For now we don't clean the whole reactor so Twisted is
+            # an exception here.
             if not threads[1].getName().startswith(
                     'PoolThread-twisted.internet.reactor'):
                 raise AssertionError(
