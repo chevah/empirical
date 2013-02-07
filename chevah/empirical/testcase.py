@@ -16,6 +16,9 @@ from nose import SkipTest
 from twisted.internet.defer import Deferred
 from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
 from twisted.python.failure import Failure
+# Workaround for reactor restart.
+from twisted.python import threadable
+threadable.registerAsIOThread()
 
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Pthon 2.7.
@@ -149,9 +152,8 @@ class TwistedTestCase(TestCase):
         self._reactor_timeout_call = reactor.callLater(
             timeout, self._raiseReactorTimeoutError, timeout)
 
-        reactor._startedBefore = False
-        reactor._started = False
-        reactor.startRunning()
+        # Fake a reactor start/restart.
+        reactor.fireSystemEvent('startup')
 
         if have_thread:
             # Thread are always hard to sync, and this is why we need to
@@ -168,15 +170,6 @@ class TwistedTestCase(TestCase):
             # Everything fine, disable timeout.
             if not self._reactor_timeout_call.cancelled:
                 self._reactor_timeout_call.cancel()
-
-        # Let the reactor know that we want to stop reactor.
-        reactor.stop()
-        # Let the reactor run one more time to execute the stop code.
-        reactor.iterate()
-
-        # Set flag to fake a clean reactor.
-        reactor._startedBefore = False
-        reactor._started = False
 
     def assertReactorIsClean(self):
         """
