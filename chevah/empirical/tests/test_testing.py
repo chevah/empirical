@@ -18,7 +18,7 @@ from chevah.empirical.testcase import ChevahTestCase
 class TestTestingInfrastructure(ChevahTestCase):
     '''General application configuration tests.'''
 
-    def test_MockHTTPServer(self):
+    def test_MockHTTPServer_default(self):
         """
         Check MockHTTPServer.
         """
