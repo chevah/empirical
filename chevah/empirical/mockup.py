@@ -2,15 +2,15 @@
 '''Module containing helpers for testing the Chevah server.'''
 from __future__ import with_statement
 
-from select import error as SelectError
 from StringIO import StringIO
-from threading import currentThread, Thread, Timer
+from threading import Thread
 import BaseHTTPServer
+import httplib
 import os
 import random
 import string
+import threading
 import urllib
-import urllib2
 
 from mock import Mock
 from OpenSSL import SSL, crypto
@@ -30,13 +30,91 @@ from chevah.empirical.constants import (
     )
 
 
-class MockHTTPServer(object):
-    '''Mock HTTP server used for testing simple HTTP requests.
+class StoppableHttpServer(BaseHTTPServer.HTTPServer):
+    """
+    BaseHTTPServer but with a stopabele server_forever.
+    """
+    def serve_forever(self):
+        """Handle one request at a time until stopped."""
+        self.stop = False
+        while not self.stop:
+            self.handle_request()
 
-    This is a context manager class.
-    '''
-    # Time in second after the sever will be forced to shutdown.
-    TIMEOUT = 4.0
+
+class ThreadedHTTPServer(Thread):
+    """
+    HTTP Server that runs in a thread.
+
+    This is actual a threaded wrapper arround an HTTP server.
+
+    Only use it for testing.
+    """
+    TIMEOUT = 1
+
+    def __init__(self,
+            responses=None, ip='127.0.0.1', port=0, debug=False, cond=None):
+        Thread.__init__(self)
+        self.ready = False
+        self.cond = cond
+        self._ip = ip
+        self._port = port
+
+    def run(self):
+        self.cond.acquire()
+        timeout = 0
+        self.httpd = None
+        while self.httpd is None:
+            try:
+                self.httpd = StoppableHttpServer(
+                    (self._ip, self._port), MockRequestHandler)
+            except Exception, e:
+                # I have no idea why this code works.
+                # It is a copy paste from:
+                # http://www.ianlewis.org/en/testing-using-mocked-server
+                import socket
+                import errno
+                import time
+                if (isinstance(e, socket.error) and
+                        errno.errorcode[e.args[0]] == 'EADDRINUSE' and
+                        timeout < self.TIMEOUT):
+                    timeout += 1
+                    time.sleep(1)
+                else:
+                    self.cond.notifyAll()
+                    self.cond.release()
+                    self.ready = True
+                    raise e
+
+        self.ready = True
+        if self.cond:
+            self.cond.notifyAll()
+            self.cond.release()
+        # Start the actual HTTP server.
+        self.httpd.serve_forever()
+
+
+class MockHTTPServer(object):
+    """
+    A contex manager which runs a HTTP server for testing simple
+    HTTP requests.
+
+    After the server is started the ip and port are available in the
+    context management instance.
+    >>> responses = [
+    ...     MockHTTPResponse(url='/hello.html', response='Hello!)]
+    >>> with MochHTTPServer(responses=responses) as httpd:
+    ...     print 'Listening at %s:%d' % (httpd.id, httpd.port)
+    ...     self.assertEqual('Hello!', your_get())
+
+    >>> responses = [
+    ...     MockHTTPResponse(
+    ...         url='/hello.php', request='user=John',
+    ...         response_content='Hello John!, response_code=202)]
+    >>> with MockHTTPServer(responses=responses) as httpd:
+    ...     self.assertEqual(
+    ...         'Hello John!',
+    ...         get_you_post(url='hello.php', data='user=John'))
+    '"""
 
     def __init__(self, responses=None, ip='127.0.0.1', port=0, debug=False):
         '''Initialize a new MockHTTPServer.
@@ -45,75 +123,45 @@ class MockHTTPServer(object):
          * port - Port to listen. Leave 0 to pick a random port.
          * responses - A list of MockHTTPResponse defining the behavior of
                         this server.
-
-        After the server is started the ip and port are available in the
-        context management instance.
-        >>> responses = [
-        ...     MockHTTPResponse(url='/hello.html', response='Hello!)]
-        >>> with MochHTTPServer(responses=responses) as httpd:
-        ...     print 'Listening at %s:%d' % (httpd.id, httpd.port)
-        ...     self.assertEqual('Hello!', your_get())
-
-        >>> responses = [
-        ...     MockHTTPResponse(
-        ...         url='/hello.php', request='user=John',
-        ...         response_content='Hello John!, response_code=202)]
-        >>> with MockHTTPServer(responses=responses) as httpd:
-        ...     self.assertEqual(
-        ...         'Hello John!',
-        ...         get_you_post(url='hello.php', data='user=John'))
         '''
-
+        # Since we can not pass an instance of MockRequestHandler
+        # we do on the fly patching here.
         MockRequestHandler.debug = debug
         if responses is None:
             MockRequestHandler.valid_responses = []
         else:
             MockRequestHandler.valid_responses = responses
-        self._server = BaseHTTPServer.HTTPServer(
-            (ip, port), MockRequestHandler)
-        (self.ip, self.port) = self._server.server_address
-        self._stopped = False
-        self._server_process = Thread(target=self._serve_page)
-        self._server_timeout = Timer(self.TIMEOUT, self._force_close)
 
-    def _serve_page(self):
-        '''Server a request while the server should still run.'''
-        while not self._stopped:
-            try:
-                self._server.handle_request()
-            except SelectError:
-                # I don't know why this error is raised on Python 2.7.
-                # I will just ignore it for now.
-                pass
-
-    def _force_close(self):
-        '''Do what it takes to close and clear the server.'''
-        try:
-            urllib2.urlopen('http://%s:%d' % (self.ip, self.port))
-        except:
-            pass
-        if currentThread is not None:
-            self._server_process.join(0.1)
+        self.cond = threading.Condition()
+        self.server = ThreadedHTTPServer(cond=self.cond, ip=ip, port=port)
 
     def __enter__(self):
-        self._server_process.start()
-        self._server_timeout.start()
+        self.cond.acquire()
+        self.server.start()
+
+        # Wait until the server is ready.
+        while not self.server.ready:
+            self.cond.wait()
+        self.cond.release()
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        self._stopped = True
-        self._server_timeout.cancel()
-        try:
-            # Try to close the thread now
-            self._server_process.join(0.01)
-        except:
-            # First attempt of closing the thread failed, so the server
-            # is still accepting one last request.
-            # We make the last request.
-            urllib2.urlopen('http://%s:%d' % (self.ip, self.port))
-            # Try to close the thread again.
-            self._server_process.join(2)
+        self.stopServer()
+        self.server.join(1)
         return False
+
+    @property
+    def port(self):
+        return self.server.httpd.server_address[1]
+
+    @property
+    def ip(self):
+        return self.server.httpd.server_address[0]
+
+    def stopServer(self):
+        conn = httplib.HTTPConnection("%s:%d" % (self.ip, self.port))
+        conn.request("QUIT", "/")
+        conn.getresponse()
 
 
 class MockRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -124,6 +172,14 @@ class MockRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def log_message(self, *args):
         pass
+
+    def do_QUIT(self):
+        """
+        send 200 OK response, and set server.stop to True
+        """
+        self.send_response(200)
+        self.end_headers()
+        self.server.stop = True
 
     def do_GET(self):
         response = self._getResponse()
