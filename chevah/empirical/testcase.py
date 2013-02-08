@@ -37,6 +37,7 @@ from chevah.compat import (
     LocalFilesystem,
     process_capabilities,
     system_users,
+    SuperAvatar,
     )
 from chevah.empirical.mockup import factory
 from chevah.empirical.constants import (
@@ -580,7 +581,7 @@ class ChevahTestCase(TwistedTestCase):
         # In case we are running the test suite as super user,
         # we use super filesystem for cleaning.
         if os.environ['USER'] == os.environ['DROP_USER']:
-            temp_avatar = system_users.getSuperAvatar()
+            temp_avatar = SuperAvatar()
         else:
             temp_avatar = DefaultAvatar()
 
