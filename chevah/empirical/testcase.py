@@ -17,9 +17,6 @@ from nose import SkipTest
 from twisted.internet.defer import Deferred
 from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
 from twisted.python.failure import Failure
-# Workaround for reactor restart.
-from twisted.python import threadable
-threadable.registerAsIOThread()
 
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Pthon 2.7.
@@ -154,8 +151,9 @@ class TwistedTestCase(TestCase):
         self._reactor_timeout_call = reactor.callLater(
             timeout, self._raiseReactorTimeoutError, timeout)
 
-        # Fake a reactor start/restart.
-        reactor.fireSystemEvent('startup')
+        reactor._startedBefore = False
+        reactor._started = False
+        reactor.startRunning()
 
         if have_thread:
             # Thread are always hard to sync, and this is why we need to
@@ -163,6 +161,30 @@ class TwistedTestCase(TestCase):
             # call the thread and allow it to sync its state with the main
             # reactor.
             sleep(0.11)
+
+    def _iterateTestReactor(self, debug=False):
+        """
+        Iterate the reactor.
+        """
+        reactor.runUntilCurrent()
+        if debug:
+            '''When debug is enabled with iterate using 1 second steps,
+            to have a much better debug output.
+            Otherwise the debug messages will flood the output.'''
+            print (
+                u'delayed: %s\n'
+                u'threads: %s\n'
+                u'writers: %s\nreaders:%s\n\n' % (
+                    self._reactorQueueToString(),
+                    reactor.threadCallQueue,
+                    reactor.getWriters(),
+                    reactor.getReaders(),
+                    ))
+            t2 = reactor.timeout()
+            t = reactor.running and t2
+            reactor.doIteration(t)
+        else:
+            reactor.doIteration(False)
 
     def _shutdownTestReactor(self):
         """
@@ -172,6 +194,14 @@ class TwistedTestCase(TestCase):
             # Everything fine, disable timeout.
             if not self._reactor_timeout_call.cancelled:
                 self._reactor_timeout_call.cancel()
+
+        # Let the reactor know that we want to stop reactor.
+        reactor.stop()
+        # Let the reactor run one more time to execute the stop code.
+        reactor.iterate()
+        # Set flag to fake a clean reactor.
+        reactor._startedBefore = False
+        reactor._started = False
 
     def assertReactorIsClean(self):
         """
@@ -236,14 +266,7 @@ class TwistedTestCase(TestCase):
         if not deferred.called:
             deferred_done = False
             while not deferred_done:
-                if debug:
-                    # When debug is enabled with iterate using 1 second
-                    # _runDeferred to have a much better debug output.
-                    #Otherwise the debug messages will flood the output.
-                    reactor.iterate(1)
-                    print u'%s\n\n' % self._reactorQueueToString()
-                else:
-                    reactor.iterate()
+                self._iterateTestReactor(debug=debug)
                 deferred_done = deferred.called
 
         result = deferred.result
@@ -285,22 +308,7 @@ class TwistedTestCase(TestCase):
         # Set it to True to enter the first loop.
         have_callbacks = True
         while have_callbacks and not self._timeout_reached:
-            if debug:
-                '''When debug is enabled with iterate using 1 second steps,
-                to have a much better debug output.
-                Otherwise the debug messages will flood the output.'''
-                print (
-                    u'delayed: %s\n'
-                    u'threads: %s\n'
-                    u'writers: %s\nreaders:%s\n\n' % (
-                        self._reactorQueueToString(),
-                        reactor.threadCallQueue,
-                        reactor.getWriters(),
-                        reactor.getReaders(),
-                        ))
-                reactor.iterate(1)
-            else:
-                reactor.iterate()
+            self._iterateTestReactor(debug=debug)
 
             have_callbacks = False
 

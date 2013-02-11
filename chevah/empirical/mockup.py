@@ -2,9 +2,11 @@
 '''Module containing helpers for testing the Chevah server.'''
 from __future__ import with_statement
 
+from select import error as SelectError
 from StringIO import StringIO
 from threading import Thread
 import BaseHTTPServer
+import errno
 import httplib
 import os
 import random
@@ -38,7 +40,13 @@ class StoppableHttpServer(BaseHTTPServer.HTTPServer):
         """Handle one request at a time until stopped."""
         self.stop = False
         while not self.stop:
-            self.handle_request()
+            try:
+                self.handle_request()
+            except SelectError, e:
+                # See Python http://bugs.python.org/issue7978
+                if e.args[0] == errno.EINTR:
+                    continue
+                raise
 
 
 class ThreadedHTTPServer(Thread):
