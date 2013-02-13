@@ -59,6 +59,8 @@ SETUP['pocket-lint']['include_files'] = ['pavement.py']
 SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
+SETUP['buildbot']['server'] = '127.0.0.1'
+SETUP['buildbot']['port'] = 10087
 
 
 @task
