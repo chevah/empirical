@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''TestCase factories for Chevah server.'''
+"""
+TestCase used for Chevah project.
+"""
 from contextlib import contextmanager
 from StringIO import StringIO
 from time import sleep
@@ -58,8 +60,8 @@ class TwistedTestCase(TestCase):
     """
     Test case for Twisted specific code.
 
-     * provides support for running deferred and start/stop the reactor.
-     * checks that temporary folder is clean at exit
+    Provides support for running deferred and start/stop the reactor during
+    tests.
     """
 
     EXCEPTED_DELAYED_CALLS = [
@@ -463,8 +465,7 @@ class ChevahTestCase(TwistedTestCase):
     """
     Test case for Chevah tests.
 
-     * provides support for running deferred and start/stop the reactor.
-     * checks that temporary folder is clean at exit
+    Checks that temporary folder is clean at exit.
     """
 
     def setUp(self):
@@ -937,19 +938,6 @@ class CommandTestCase(ChevahTestCase):
         sys.stderr = sys.__stderr__
         sys.exit = self.sys_exit
         super(CommandTestCase, self).tearDown()
-
-
-class ChevahWebTestCase(ChevahTestCase):
-    '''A test case to integrate well with SeleniumTestCast.'''
-
-    def setUp(self):
-        super(ChevahTestCase, self).setUp()
-
-    def tearDown(self):
-        try:
-            super(ChevahTestCase, self).tearDown()
-        finally:
-            self.cleanReactor()
 
 
 def setup_os(users, groups):
