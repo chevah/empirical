@@ -235,19 +235,23 @@ class TwistedTestCase(TestCase):
                     continue
                 raise_failure('delayed calls', delayed_call)
 
-    def runDeferred(self, deferred, timeout=1, debug=True):
+    def runDeferred(self, deferred, timeout=1, debug=False):
         """
         Run the deferred in the reactor loop.
 
         Starts the reactor, waits for deferred execution,
         raises error in timeout, stops the reactor.
 
-        This is low level method. In most tests you would like to use on
-        of the `getDeferredFailure` or `getDeferredResult`.
+        This will do recursive calls, in case the original deferred returns
+        another deferred.
+
+        This is low level method. In most tests you would like to use
+        `getDeferredFailure` or `getDeferredResult`.
 
         Usage::
 
-            credentials = factory.makeCredentials()
+            checker = mk.credentialsChecker()
+            credentials = mk.credentials()
 
             deferred = checker.requestAvatarId(credentials)
             self.runDeferred(deferred)
@@ -255,9 +259,14 @@ class TwistedTestCase(TestCase):
             self.assertIsNotFailure(deferred)
             self.assertEqual('something', deferred.result)
         """
-        self._initiateTestReactor(timeout=timeout)
-        self._runDeferred(deferred, timeout=timeout, debug=debug)
-        self._shutdownTestReactor()
+        if not isinstance(deferred, Deferred):
+            raise AssertionError('This is not a deferred.')
+
+        try:
+            self._initiateTestReactor(timeout=timeout)
+            self._runDeferred(deferred, timeout=timeout, debug=debug)
+        finally:
+            self._shutdownTestReactor()
 
     def _runDeferred(self, deferred, timeout, debug):
         """
@@ -268,6 +277,10 @@ class TwistedTestCase(TestCase):
             while not deferred_done:
                 self._iterateTestReactor(debug=debug)
                 deferred_done = deferred.called
+
+                if self._timeout_reached:
+                    raise AssertionError(
+                        'Deferred took more than %d to execute.' % timeout)
 
         result = deferred.result
         if isinstance(result, Deferred):
@@ -357,6 +370,16 @@ class TwistedTestCase(TestCase):
     def getDeferredFailure(self, deferred, timeout=1, debug=False):
         """
         Run the deferred and return the failure.
+
+        Usage::
+
+            checker = mk.credentialsChecker()
+            credentials = mk.credentials()
+
+            deferred = checker.requestAvatarId(credentials)
+            failure = self.getDeferredFailure(deferred)
+
+            self.assertFailureType(AuthentiationError, failure)
         """
         self.runDeferred(deferred, timeout=timeout, debug=debug)
         self.assertIsFailure(deferred)
@@ -367,6 +390,16 @@ class TwistedTestCase(TestCase):
     def getDeferredResult(self, deferred, timeout=1, debug=False):
         """
         Run the deferred and return the result.
+
+        Usage::
+
+            checker = mk.credentialsChecker()
+            credentials = mk.credentials()
+
+            deferred = checker.requestAvatarId(credentials)
+            result = self.getDeferredResult(deferred)
+
+            self.assertEqual('something', result)
         """
         self.runDeferred(deferred, timeout=timeout, debug=debug)
         self.assertIsNotFailure(deferred)
@@ -857,12 +890,6 @@ class ChevahTestCase(TwistedTestCase):
         if not source.endswith(end):
             raise AssertionError(
                 '"%s" does not end with "%s"' % (source, end))
-
-    def assertIsException(self, expected_id, exception):
-        if not expected_id == exception.id:
-            raise AssertionError(
-                'Expecting exception with id "%d", got "%d:%s".' % (
-                    expected_id, exception.id, exception.text))
 
     def assertProvides(self, interface, obj):
         self.assertTrue(
