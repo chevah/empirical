@@ -679,7 +679,7 @@ class ChevahCommonsFactory(object):
         """
         base = u'str' + unicode(self.getUniqueInteger())
 
-        # The minimum lenght so that we don't truncate the unique string.
+        # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
         extra_text = ''
 
