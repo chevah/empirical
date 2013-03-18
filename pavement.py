@@ -15,7 +15,6 @@ EXTRA_PACKAGES = [
     ]
 
 from brink.pavement_commons import (
-    _p,
     buildbot_list,
     buildbot_try,
     default,
@@ -89,7 +88,7 @@ def build():
     """
     Copy new source code to build folder.
     """
-    build_target = _p([pave.path.build, 'setup-build'])
+    build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', 'build', '--build-base', build_target]
     print "Building in " + build_target
     import setup
