@@ -155,6 +155,7 @@ class TwistedTestCase(TestCase):
 
         reactor._startedBefore = False
         reactor._started = False
+        reactor._justStopped = False
         reactor.startRunning()
 
         if have_thread:
@@ -183,27 +184,36 @@ class TwistedTestCase(TestCase):
                     reactor.getReaders(),
                     ))
             t2 = reactor.timeout()
+            # For testing we want to force to reactor to wake at an
+            # interval of at most 1 second.
+            if t2 is None or t2 > 1:
+                t2 = 1
             t = reactor.running and t2
             reactor.doIteration(t)
         else:
             reactor.doIteration(False)
 
-    def _shutdownTestReactor(self):
+    def _shutdownTestReactor(self, prevent_stop=False):
         """
         Called at the end of a test reactor run.
+
+        When prevent_stop=True, the reactor will not be stopped.
         """
         if not self._timeout_reached:
             # Everything fine, disable timeout.
             if not self._reactor_timeout_call.cancelled:
                 self._reactor_timeout_call.cancel()
 
-        # Let the reactor know that we want to stop reactor.
-        reactor.stop()
-        # Let the reactor run one more time to execute the stop code.
-        reactor.iterate()
+        if not prevent_stop:
+            # Let the reactor know that we want to stop reactor.
+            reactor.stop()
+            # Let the reactor run one more time to execute the stop code.
+            reactor.iterate()
+
         # Set flag to fake a clean reactor.
         reactor._startedBefore = False
         reactor._started = False
+        reactor._justStopped = False
 
     def assertReactorIsClean(self):
         """
@@ -237,7 +247,9 @@ class TwistedTestCase(TestCase):
                     continue
                 raise_failure('delayed calls', delayed_call)
 
-    def runDeferred(self, deferred, timeout=1, debug=False):
+    def runDeferred(self,
+            deferred, timeout=1, debug=False, have_thread=False,
+            prevent_stop=False):
         """
         Run the deferred in the reactor loop.
 
@@ -265,10 +277,12 @@ class TwistedTestCase(TestCase):
             raise AssertionError('This is not a deferred.')
 
         try:
-            self._initiateTestReactor(timeout=timeout)
-            self._runDeferred(deferred, timeout=timeout, debug=debug)
+            self._initiateTestReactor(
+                timeout=timeout, have_thread=have_thread)
+            self._runDeferred(deferred, timeout, debug=debug)
         finally:
-            self._shutdownTestReactor()
+            self._shutdownTestReactor(
+                prevent_stop=prevent_stop)
 
     def _runDeferred(self, deferred, timeout, debug):
         """
@@ -288,8 +302,8 @@ class TwistedTestCase(TestCase):
         if isinstance(result, Deferred):
             self._runDeferred(result, timeout=timeout, debug=debug)
 
-    def executeReactor(self, timeout=1, debug=False, run_once=False,
-                       have_thread=False):
+    def executeReactor(self,
+            timeout=1, debug=False, run_once=False, have_thread=False):
         """
         Run reactor until no more delayed calls, readers or
         writers or threads are in the queues.
@@ -369,7 +383,9 @@ class TwistedTestCase(TestCase):
 
         self._shutdownTestReactor()
 
-    def getDeferredFailure(self, deferred, timeout=1, debug=False):
+    def getDeferredFailure(self,
+            deferred, timeout=1, debug=False, have_thread=False,
+            prevent_stop=False):
         """
         Run the deferred and return the failure.
 
@@ -383,13 +399,21 @@ class TwistedTestCase(TestCase):
 
             self.assertFailureType(AuthentiationError, failure)
         """
-        self.runDeferred(deferred, timeout=timeout, debug=debug)
+        self.runDeferred(
+            deferred,
+            timeout=timeout,
+            debug=debug,
+            have_thread=have_thread,
+            prevent_stop=prevent_stop,
+            )
         self.assertIsFailure(deferred)
         failure = deferred.result
         self.ignoreFailure(deferred)
         return failure
 
-    def getDeferredResult(self, deferred, timeout=1, debug=False):
+    def getDeferredResult(self,
+            deferred, timeout=1, debug=False, have_thread=False,
+            prevent_stop=False):
         """
         Run the deferred and return the result.
 
@@ -403,7 +427,13 @@ class TwistedTestCase(TestCase):
 
             self.assertEqual('something', result)
         """
-        self.runDeferred(deferred, timeout=timeout, debug=debug)
+        self.runDeferred(
+            deferred,
+            timeout=timeout,
+            debug=debug,
+            have_thread=have_thread,
+            prevent_stop=prevent_stop,
+            )
         self.assertIsNotFailure(deferred)
         return deferred.result
 
