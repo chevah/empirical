@@ -5,7 +5,7 @@ Tests for ChevahTestCase.
 """
 from __future__ import with_statement
 
-from twisted.internet.defer import Deferred
+from twisted.internet import defer, reactor
 from twisted.internet.task import Clock
 
 from chevah.empirical.testcase import ChevahTestCase
@@ -36,7 +36,7 @@ class TestChevahTestCase(ChevahTestCase):
         runDeferred will execute the reactor and raise a timeout
         if deferred got no result after the timeout.
         """
-        deferred = Deferred()
+        deferred = defer.Deferred()
 
         with self.assertRaises(AssertionError) as context:
             self.runDeferred(deferred, timeout=0)
@@ -55,8 +55,7 @@ class TestChevahTestCase(ChevahTestCase):
         runDeferred will execute the reactor and wait for deferred
         tu return a result.
         """
-        from twisted.internet import reactor
-        deferred = Deferred()
+        deferred = defer.Deferred()
         reactor.callLater(0.1, lambda d: d.callback('ok'), deferred)
 
         self.runDeferred(deferred, timeout=0.3)
@@ -76,9 +75,8 @@ class TestChevahTestCase(ChevahTestCase):
         # deferred_1 will get the result at some point, and will pass it
         # to deferred_2
         # deferred.callback() can not be called directly with a deferred.
-        from twisted.internet import reactor
-        deferred_1 = Deferred()
-        deferred_2 = Deferred()
+        deferred_1 = defer.Deferred()
+        deferred_2 = defer.Deferred()
         deferred_2.callback('start')
         deferred_2.addCallback(lambda d: deferred_1)
         reactor.callLater(0.1, lambda d: d.callback('ok'), deferred_1)
@@ -86,3 +84,60 @@ class TestChevahTestCase(ChevahTestCase):
         self.runDeferred(deferred_2, timeout=0.3)
 
         self.assertEqual('ok', deferred_2.result)
+
+    def test_runDeferred_cleanup(self):
+        """
+        runDeferred will execute the reactor and will leave the reactor
+        stopped.
+        """
+        deferred = defer.succeed(True)
+
+        # Make sure we have a threadpool before calling runDeferred.
+        threadpool = reactor.getThreadPool()
+        self.assertIsNotNone(threadpool)
+        self.assertIsNotNone(reactor.threadpool)
+
+        self.runDeferred(deferred, timeout=0.3)
+
+        self.assertIsTrue(deferred.result)
+        self.assertIsNone(reactor.threadpool)
+
+    def test_runDeferred_prevent_stop(self):
+        """
+        When called with `prevent_stop=True` runDeferred will not
+        stop the reactor at exit.
+
+        In this way, threadpool and other shared reactor resources can be
+        reused between multiple calls of runDeferred.
+        """
+        deferred = defer.succeed(True)
+        # Force the reactor to create an internal threadpool, in
+        # case it was removed by previous calls.
+        initial_pool = reactor.getThreadPool()
+
+        with self.Patch.object(reactor, 'stop') as mock_stop:
+            self.runDeferred(deferred, timeout=0.3, prevent_stop=True)
+
+        # reactor.stop() is not called
+        self.assertIsFalse(mock_stop.called)
+        self.assertIsTrue(reactor._started)
+        self.assertIsTrue(deferred.result)
+        self.assertIsNotNone(reactor.threadpool)
+        self.assertIs(initial_pool, reactor.threadpool)
+
+        # Run again and we should still have the same pool.
+        with self.Patch.object(reactor, 'startRunning') as mock_start:
+            self.runDeferred(
+                defer.succeed(True), timeout=0.3, prevent_stop=True)
+
+        # reactor.start() is not called if reactor was not previously
+        # stopped.
+        self.assertIsFalse(mock_start.called)
+        self.assertIs(initial_pool, reactor.threadpool)
+
+        # Run again but this time call reactor.stop.
+        self.runDeferred(
+            defer.succeed(True), timeout=0.3, prevent_stop=False)
+
+        self.assertIsFalse(reactor._started)
+        self.assertIsNone(reactor.threadpool)
