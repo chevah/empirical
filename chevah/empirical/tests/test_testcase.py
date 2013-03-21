@@ -55,7 +55,6 @@ class TestChevahTestCase(ChevahTestCase):
         runDeferred will execute the reactor and wait for deferred
         tu return a result.
         """
-        from twisted.internet import reactor
         deferred = defer.Deferred()
         reactor.callLater(0.1, lambda d: d.callback('ok'), deferred)
 
@@ -116,20 +115,29 @@ class TestChevahTestCase(ChevahTestCase):
         # case it was removed by previous calls.
         initial_pool = reactor.getThreadPool()
 
-        self.runDeferred(deferred, timeout=0.3, prevent_stop=True)
+        with self.Patch.object(reactor, 'stop') as mock_stop:
+            self.runDeferred(deferred, timeout=0.3, prevent_stop=True)
 
+        # reactor.stop() is not called
+        self.assertIsFalse(mock_stop.called)
+        self.assertIsTrue(reactor._started)
         self.assertIsTrue(deferred.result)
         self.assertIsNotNone(reactor.threadpool)
         self.assertIs(initial_pool, reactor.threadpool)
 
         # Run again and we should still have the same pool.
-        self.runDeferred(
-            defer.succeed(True), timeout=0.3, prevent_stop=True)
+        with self.Patch.object(reactor, 'startRunning') as mock_start:
+            self.runDeferred(
+                defer.succeed(True), timeout=0.3, prevent_stop=True)
 
+        # reactor.start() is not called if reactor was not previously
+        # stopped.
+        self.assertIsFalse(mock_start.called)
         self.assertIs(initial_pool, reactor.threadpool)
 
         # Run again but this time call reactor.stop.
         self.runDeferred(
             defer.succeed(True), timeout=0.3, prevent_stop=False)
 
+        self.assertIsFalse(reactor._started)
         self.assertIsNone(reactor.threadpool)

@@ -153,6 +153,11 @@ class TwistedTestCase(TestCase):
         self._reactor_timeout_call = reactor.callLater(
             timeout, self._raiseReactorTimeoutError, timeout)
 
+        # Don't start the reactor if it is already started.
+        # This can happen if we prevent stop in a previous run.
+        if reactor._started:
+            return
+
         reactor._startedBefore = False
         reactor._started = False
         reactor._justStopped = False
@@ -204,11 +209,14 @@ class TwistedTestCase(TestCase):
             if not self._reactor_timeout_call.cancelled:
                 self._reactor_timeout_call.cancel()
 
-        if not prevent_stop:
-            # Let the reactor know that we want to stop reactor.
-            reactor.stop()
-            # Let the reactor run one more time to execute the stop code.
-            reactor.iterate()
+        if prevent_stop:
+            # Don't continue with stop procedure.
+            return
+
+        # Let the reactor know that we want to stop reactor.
+        reactor.stop()
+        # Let the reactor run one more time to execute the stop code.
+        reactor.iterate()
 
         # Set flag to fake a clean reactor.
         reactor._startedBefore = False
@@ -223,6 +231,9 @@ class TwistedTestCase(TestCase):
         def raise_failure(location, reason):
             raise AssertionError(
                 'Reactor is not clean. %s: %s' % (location, reason))
+
+        if reactor._started:
+            raise AssertionError('Reactor was not stopped.')
 
         # Look at threads queue.
         if len(reactor.threadCallQueue) > 0:
