@@ -13,6 +13,7 @@ import random
 import string
 import threading
 import urllib
+import uuid
 
 from mock import Mock
 from OpenSSL import SSL, crypto
@@ -665,6 +666,30 @@ class ChevahCommonsFactory(object):
 
     # Class member used for generating unique integers.
     _unique_id = 0
+
+    def string(self, *args, **kwargs):
+        """
+        Shortcut for getUniqueString.
+        """
+        return self.getUniqueString(*args, **kwargs)
+
+    def number(self, *args, **kwargs):
+        """
+        Shortcut for getUniqueInteger.
+        """
+        return self.getUniqueInteger(*args, **kwargs)
+
+    def uuid1(self):
+        """
+        Generate a random UUID1 based on current machine.
+        """
+        return uuid.uuid1()
+
+    def uuid4(self):
+        """
+        Generate a random UUID4.
+        """
+        return uuid.uuid4()
 
     @property
     def username(self):

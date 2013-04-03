@@ -493,13 +493,14 @@ class ChevahTestCase(TwistedTestCase):
     Checks that temporary folder is clean at exit.
     """
 
+    os_name = os.name
+    Bunch = Bunch
+    Contains = Contains
+    Patch = patch
+
     def setUp(self):
         super(ChevahTestCase, self).setUp()
         self.test_segments = None
-        self.Bunch = Bunch
-        self.Contains = Contains
-        self.os_name = os.name
-        self.Patch = patch
 
     def tearDown(self):
         if self.test_segments:
