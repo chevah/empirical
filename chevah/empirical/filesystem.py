@@ -222,6 +222,17 @@ class LocalTestFilesystem(LocalFilesystem):
 
     def getFileContent(self, segments, utf8=True):
         """
+        Return the content of file.
+
+        By default, the content is returned as Unicode.
+        """
+        opened_file = self.openFileForReading(segments, utf8=utf8)
+        result = opened_file.read()
+        opened_file.close()
+        return result
+
+    def getFileLines(self, segments, utf8=True):
+        """
         Return a list with all lines from file.
 
         By default, the content is returned as Unicode.

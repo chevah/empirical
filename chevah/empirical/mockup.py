@@ -7,6 +7,7 @@ from StringIO import StringIO
 from threading import Thread
 import BaseHTTPServer
 import errno
+import hashlib
 import httplib
 import os
 import random
@@ -697,6 +698,16 @@ class ChevahCommonsFactory(object):
         The account under which this process is executed.
         """
         return unicode(os.environ['USER'])
+
+    def md5checksum(self, content):
+        """
+        Return MD5 checksum for content.
+
+        Content must by byte string.
+        """
+        md5_sum = hashlib.md5()
+        md5_sum.update(content)
+        return md5_sum.digest()
 
     def getUniqueString(self, length=None):
         """
