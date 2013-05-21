@@ -4,7 +4,7 @@ Constants used for testing.
 """
 import sys
 
-# Test accounts and passwords
+# Test accounts and passwords.
 TEST_ACCOUNT_USERNAME = u'mâț mițișor'
 TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
 TEST_ACCOUNT_GROUP = u'g mâțmițișor'
@@ -12,7 +12,7 @@ TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = u'Users'
 TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
-TEST_ACCOUNT_PASSWORD_OTHER = u'alta'
+TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
