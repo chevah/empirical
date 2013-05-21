@@ -699,9 +699,9 @@ class ChevahCommonsFactory(object):
         """
         return unicode(os.environ['USER'])
 
-    def md5checksum(self, content):
+    def md5(self, content):
         """
-        Return MD5 checksum for content.
+        Return MD5 digest for `content`.
 
         Content must by byte string.
         """

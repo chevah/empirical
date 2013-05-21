@@ -1,6 +1,11 @@
 Release notes for chevah.empirical
 ==================================
 
+0.20.1 - 21/05/2013
+-------------------
+
+* Rename ChevahCommonsFactory.md5checksum to ChevahCommonsFactory.md5.
+
 
 0.20.0 - 19/05/2013
 -------------------
