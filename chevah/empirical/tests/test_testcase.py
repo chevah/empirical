@@ -141,3 +141,99 @@ class TestChevahTestCase(ChevahTestCase):
 
         self.assertIsFalse(reactor._started)
         self.assertIsNone(reactor.threadpool)
+
+    def test_assertNoResult_good(self):
+        """
+        assertNoResult will not fail if deferred has no result yet.
+        """
+        deferred = defer.Deferred()
+        self.assertNoResult(deferred)
+
+    def test_assertNoResult_fail(self):
+        """
+        assertNoResult will fail if deferred has a result.
+        """
+        deferred = defer.Deferred()
+        deferred.callback(None)
+
+        with self.assertRaises(AssertionError):
+            self.assertNoResult(deferred)
+
+    def test_successResultOf_ok(self):
+        """
+        successResultOf will not fail if deferred has a result.
+        """
+        value = object()
+        deferred = defer.succeed(value)
+
+        result = self.successResultOf(deferred)
+
+        self.assertEqual(value, result)
+
+    def test_successResultOf_no_result(self):
+        """
+        successResultOf will fail if deferred has no result.
+        """
+        deferred = defer.Deferred()
+
+        with self.assertRaises(AssertionError):
+            self.successResultOf(deferred)
+
+    def test_successResultOf_failure(self):
+        """
+        successResultOf will fail if deferred has a failure.
+        """
+        deferred = defer.fail(AssertionError())
+
+        with self.assertRaises(AssertionError):
+            self.successResultOf(deferred)
+
+    def test_failureResultOf_good_any(self):
+        """
+        failureResultOf will return the failure.
+        """
+        error = AssertionError(u'bla')
+        deferred = defer.fail(error)
+
+        failure = self.failureResultOf(deferred)
+
+        self.assertEqual(error, failure.value)
+
+    def test_failureResultOf_good_type(self):
+        """
+        failureResultOf will return the failure of a specific type.
+        """
+        error = NotImplementedError(u'bla')
+        deferred = defer.fail(error)
+
+        failure = self.failureResultOf(deferred, NotImplementedError)
+
+        self.assertEqual(error, failure.value)
+
+    def test_failureResultOf_bad_type(self):
+        """
+        failureResultOf will fail if failure is not of the specified type.
+        """
+        error = NotImplementedError(u'bla')
+        deferred = defer.fail(error)
+
+        with self.assertRaises(AssertionError):
+            self.failureResultOf(deferred, SystemExit)
+
+    def test_failureResultOf_no_result(self):
+        """
+        failureResultOf will fail if deferred got no result.
+        """
+        deferred = defer.Deferred()
+
+        with self.assertRaises(AssertionError):
+            self.failureResultOf(deferred)
+
+    def test_failureResultOf_no_failure(self):
+        """
+        failureResultOf will fail if deferred is not a failure.
+        """
+        deferred = defer.succeed(None)
+
+        with self.assertRaises(AssertionError):
+            self.failureResultOf(deferred)
