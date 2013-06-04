@@ -794,15 +794,13 @@ class ChevahTestCase(TwistedTestCase):
         else:
             temp_avatar = DefaultAvatar()
 
-        temp_avatar.home_folder_path = factory.fs.temp_path
-        temp_avatar.root_folder_path = factory.fs.temp_path
-
         temp_filesystem = LocalFilesystem(avatar=temp_avatar)
         temp_members = []
-        for member in (temp_filesystem.getFolderContent([])):
+        for member in (temp_filesystem.getFolderContent(temp_segments)):
             if member.find(TEST_NAME_MARKER) != -1:
                 temp_members.append(member)
-                segments = [member]
+                segments = temp_segments[:]
+                segments.append(member)
                 if temp_filesystem.isFolder(segments):
                     temp_filesystem.deleteFolder(segments, recursive=True)
                 else:
