@@ -137,6 +137,16 @@ def build():
     """
     Copy new source code to build folder.
     """
+
+    # Clean previous files.
+    pave.fs.deleteFolder([
+        pave.path.build,
+        pave.getPythonLibPath(python_version=PYTHON_VERSION),
+        'chevah',
+        'emprical',
+        ])
+    pave.fs.deleteFolder([pave.path.build, 'setup-build'])
+
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', 'build', '--build-base', build_target]
     print "Building in " + build_target

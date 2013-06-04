@@ -11,6 +11,16 @@ from twisted.internet.task import Clock
 from chevah.empirical import EmpiricalTestCase, mk
 
 
+class Dummy(object):
+    """
+    Dummy class to help with testing.
+    """
+    _value = mk.string()
+
+    def method(self):
+        return self._value
+
+
 class TestEmpiricalTestCase(EmpiricalTestCase):
     """
     General tests for EmpiricalTestCase.
@@ -115,7 +125,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         # case it was removed by previous calls.
         initial_pool = reactor.getThreadPool()
 
-        with self.Patch.object(reactor, 'stop') as mock_stop:
+        with self.patchObject(reactor, 'stop') as mock_stop:
             self.runDeferred(deferred, timeout=0.3, prevent_stop=True)
 
         # reactor.stop() is not called
@@ -126,7 +136,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         self.assertIs(initial_pool, reactor.threadpool)
 
         # Run again and we should still have the same pool.
-        with self.Patch.object(reactor, 'startRunning') as mock_start:
+        with self.patchObject(reactor, 'startRunning') as mock_start:
             self.runDeferred(
                 defer.succeed(True), timeout=0.3, prevent_stop=True)
 
@@ -285,3 +295,48 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
             u'Temporary folder is not clean.', context.exception.message)
 
         self.assertFalse(mk.fs.exists(temp_segments))
+
+    def test_patch(self):
+        """
+        It can be used for patching classes.
+        """
+        value = mk.string()
+
+        with self.patch(
+                'chevah.empirical.tests.test_testcase.Dummy.method',
+                return_value=value,
+            ):
+            instance = Dummy()
+            self.assertEqual(value, instance.method())
+
+        # After exiting the context, the value is restored.
+        instance = Dummy()
+        self.assertEqual(Dummy._value, instance.method())
+
+    def test_patchObject(self):
+        """
+        It can be used for patching an instance of an object.
+        """
+        value = mk.string()
+        one_instance = Dummy()
+
+        with self.patchObject(
+                one_instance, 'method', return_value=value):
+            self.assertEqual(value, one_instance.method())
+
+            # All other instances are not affected.
+            new_instance = Dummy()
+            self.assertEqual(Dummy._value, new_instance.method())
+
+        # After exiting the context, the value is restored.
+        self.assertEqual(Dummy._value, one_instance.method())
+
+    def test_Mock(self):
+        """
+        It creates a generic mock object.
+        """
+        value = mk.string()
+
+        mock = self.Mock(return_value=value)
+
+        self.assertEqual(value, mock())

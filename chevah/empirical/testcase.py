@@ -14,7 +14,7 @@ import sys
 import time
 
 from bunch import Bunch
-from mock import patch
+from mock import patch, Mock
 from nose import SkipTest
 from twisted.internet.defer import Deferred
 from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
@@ -618,6 +618,8 @@ class ChevahTestCase(TwistedTestCase):
     os_name = os.name
     Bunch = Bunch
     Contains = Contains
+    Mock = Mock
+    #: Obsolete. Please use self.patch and self.patchObject.
     Patch = patch
 
     def setUp(self):
@@ -702,7 +704,7 @@ class ChevahTestCase(TwistedTestCase):
             if not factory.fs.isFolder(temp_segments):
                 factory.fs.createFolder(temp_segments)
 
-        ChevahTestCase.assertTempIsClean(silent=True)
+        cls.cleanTemporaryFolder()
 
     @classmethod
     def haveSuperPowers(cls):
@@ -759,15 +761,19 @@ class ChevahTestCase(TwistedTestCase):
             else:
                 raise
 
-    @classmethod
-    def assertTempIsClean(cls, silent=False):
+    @staticmethod
+    def patch(*args, **kwargs):
         """
-        Raise an error if the temporary folder contains any testing
-        specific files for folders.
+        Helper for generic patching.
         """
-        members = cls.cleanTemporaryFolder()
-        if members:
-            raise AssertionError(u'Temporary folder is not clean.')
+        return patch(*args, **kwargs)
+
+    @staticmethod
+    def patchObject(*args, **kwargs):
+        """
+        Helper for patching objects.
+        """
+        return patch.object(*args, **kwargs)
 
     @staticmethod
     def cleanTemporaryFolder():
@@ -803,6 +809,16 @@ class ChevahTestCase(TwistedTestCase):
                     temp_filesystem.deleteFile(segments)
 
         return temp_members
+
+    @classmethod
+    def assertTempIsClean(cls):
+        """
+        Raise an error if the temporary folder contains any testing
+        specific files for folders.
+        """
+        members = cls.cleanTemporaryFolder()
+        if members:
+            raise AssertionError(u'Temporary folder is not clean.')
 
     def assertIsFalse(self, value):
         '''Raise an exception if value is not 'False'.'''

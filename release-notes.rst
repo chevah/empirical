@@ -1,6 +1,16 @@
 Release notes for chevah.empirical
 ==================================
 
+0.14.0 - 04/06/2013
+-------------------
+
+* Fix TestCase.assertTempIsClean() and remove `silent` flag argument.
+* Add TestCase.cleanTemporaryFolder().
+* Add TestCase.patch() and TestCase.patchObject().
+* Add mk.ascii and mk.TCPPort.
+* Remove mk.makeMock() and move it as TestCase.Mock().
+
+
 0.13.0 - 21/05/2013
 -------------------
 

@@ -8,15 +8,16 @@ from __future__ import with_statement
 from urllib2 import urlopen
 
 from chevah.empirical.mockup import (
-    factory,
     MockHTTPResponse,
     MockHTTPServer,
     )
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.empirical import EmpiricalTestCase, mk
 
 
-class TestTestingInfrastructure(ChevahTestCase):
-    '''General application configuration tests.'''
+class TestMockHTTPServer(EmpiricalTestCase):
+    """
+    Tests for MockHTTPServer.
+    """
 
     def test_MockHTTPServer_default(self):
         """
@@ -33,26 +34,40 @@ class TestTestingInfrastructure(ChevahTestCase):
             self.assertEqual('test', f.read())
 
 
-class TestFactory(ChevahTestCase):
-    '''Test for factory methods.'''
+class TestFactory(EmpiricalTestCase):
+    """
+    Test for test objects factory.
+    """
 
-    def test_getUniqueString(self):
+    def test_string(self):
         """
-        getUniqueString will return different values at each call.
+        It will return different values at each call.
 
-        Value is unicode.
+        Value is Unicode.
         """
         self.assertNotEqual(
-            factory.getUniqueString(),
-            factory.getUniqueString(),
+            mk.string(),
+            mk.string(),
             )
-        self.assertIsInstance(unicode, factory.getUniqueString())
+        self.assertIsInstance(unicode, mk.string())
 
-    def test_getUniqueInteger(self):
+    def test_number(self):
         """
-        getUniqueInteger will return different values at each call.
+        It will return different values at each call.
         """
         self.assertNotEqual(
-            factory.getUniqueInteger(),
-            factory.getUniqueInteger(),
+            mk.number(),
+            mk.number(),
             )
+
+    def test_ascii(self):
+        """
+        It will return different values at each call.
+
+        Value is str.
+        """
+        self.assertNotEqual(
+            mk.ascii(),
+            mk.ascii(),
+            )
+        self.assertIsInstance(str, mk.ascii())
