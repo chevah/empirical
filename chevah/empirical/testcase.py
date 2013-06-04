@@ -759,10 +759,23 @@ class ChevahTestCase(TwistedTestCase):
             else:
                 raise
 
+    @classmethod
+    def assertTempIsClean(cls, silent=False):
+        """
+        Raise an error if the temporary folder contains any testing
+        specific files for folders.
+        """
+        members = cls.cleanTemporaryFolder()
+        if members:
+            raise AssertionError(u'Temporary folder is not clean.')
+
     @staticmethod
-    def assertTempIsClean(silent=False):
-        '''Assert that the temporary folder does not contains any testing
-        specific files for folders.'''
+    def cleanTemporaryFolder():
+        """
+        Clean all test files from temporary folder.
+
+        Return a list of members which were removed.
+        """
         temp_segments = factory.fs.temp_segments
 
         if not factory.fs.exists(temp_segments):
@@ -775,22 +788,21 @@ class ChevahTestCase(TwistedTestCase):
         else:
             temp_avatar = DefaultAvatar()
 
-        temp_avatar._home_folder_path = factory.fs.temp_path
-        temp_avatar._root_folder_path = factory.fs.temp_path
+        temp_avatar.home_folder_path = factory.fs.temp_path
+        temp_avatar.root_folder_path = factory.fs.temp_path
 
         temp_filesystem = LocalFilesystem(avatar=temp_avatar)
-        dirty = False
+        temp_members = []
         for member in (temp_filesystem.getFolderContent([])):
             if member.find(TEST_NAME_MARKER) != -1:
-                dirty = True
+                temp_members.append(member)
                 segments = [member]
                 if temp_filesystem.isFolder(segments):
                     temp_filesystem.deleteFolder(segments, recursive=True)
                 else:
                     temp_filesystem.deleteFile(segments)
 
-        if dirty and not silent:
-            raise AssertionError(u'Temporary folder is not clean.')
+        return temp_members
 
     def assertIsFalse(self, value):
         '''Raise an exception if value is not 'False'.'''

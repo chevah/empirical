@@ -8,12 +8,12 @@ from __future__ import with_statement
 from twisted.internet import defer, reactor
 from twisted.internet.task import Clock
 
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.empirical import EmpiricalTestCase, mk
 
 
-class TestChevahTestCase(ChevahTestCase):
+class TestEmpiricalTestCase(EmpiricalTestCase):
     """
-    General tests for ChevahTestCase.
+    General tests for EmpiricalTestCase.
     """
 
     def test_runDeferred_non_deferred(self):
@@ -237,3 +237,51 @@ class TestChevahTestCase(ChevahTestCase):
 
         with self.assertRaises(AssertionError):
             self.failureResultOf(deferred)
+
+    def test_cleanTemporaryFolder_empty(self):
+        """
+        Empty list is returned if temporary folder does not contain test
+        files for folders.
+        """
+        result = self.cleanTemporaryFolder()
+
+        self.assertIsEmpty(result)
+
+    def test_cleanTemporaryFolder_content(self):
+        """
+        The list of members is returned if temporary folder contains test
+        files for folders.
+
+        Only root members are returned and folders are removed recursively.
+        """
+        file1 = mk.fs.createFileInTemp()
+        folder1 = mk.fs.createFolderInTemp()
+        folder1_file2 = folder1[:]
+        folder1_file2.append(mk.makeFilename())
+
+        result = self.cleanTemporaryFolder()
+
+        self.assertEqual(2, len(result))
+        self.assertContains(file1[-1], result)
+        self.assertContains(folder1[-1], result)
+
+    def test_assertTempIsClean_clean_temp(self):
+        """
+        No error is raised if temp folder is clean.
+        """
+        self.assertTempIsClean()
+
+    def test_assertTempIsClean_dirty(self):
+        """
+        If temp is not clean an error is raised and then temp folders
+        is cleaned.
+        """
+        temp_segments = mk.fs.createFileInTemp()
+
+        with self.assertRaises(AssertionError) as context:
+            self.assertTempIsClean()
+
+        self.assertEqual(
+            u'Temporary folder is not clean.', context.exception.message)
+
+        self.assertFalse(mk.fs.exists(temp_segments))
