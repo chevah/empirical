@@ -62,20 +62,26 @@ class LocalTestFilesystem(LocalFilesystem):
             length=0):
         '''Create a file in the temporary folder.'''
         temp_segments = self.temp_segments
-        # We need a standardized way to generate temporary file names.
-        # It's required to use a delayed import in order to avoid a
-        # circular import reference as factory uses filesystem.
-        from chevah.empirical import factory
-        filename = factory.makeFilename(prefix=prefix, suffix=suffix)
+
+        filename = self._makeFilename(prefix=prefix, suffix=suffix)
         temp_segments.append(filename)
         self.createFile(temp_segments, content=content, length=length)
         return temp_segments
+
+    def _makeFilename(self, prefix=u'', suffix=u''):
+        """
+        Return a testing filename.
+        """
+        # It's required to use a delayed import in order to avoid a
+        # circular import reference as factory uses filesystem.
+        from chevah.empirical import factory
+        return factory.makeFilename(prefix=prefix, suffix=suffix)
 
     def makePathInTemp(self):
         """
         Return a (path, segments) that can be created in the temporary folder.
         """
-        name = unicode(uuid.uuid1()) + TEST_NAME_MARKER
+        name = self._makeFilename()
         segments = self.temp_segments
         segments.append(name)
         path = os.path.join(self.temp_path, name)
@@ -89,7 +95,7 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         if foldername is None:
             # We add an unicode to the temp filename.
-            foldername = unicode(uuid.uuid1()) + TEST_NAME_MARKER
+            foldername = self._makeFilename()
 
         temp_segments = self.temp_segments
 

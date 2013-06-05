@@ -16,9 +16,11 @@ import threading
 import urllib
 import uuid
 
-from mock import Mock
 from OpenSSL import SSL, crypto
+
 from twisted.internet import address, defer, interfaces as internet_interfaces
+from twisted.internet.protocol import Factory
+from twisted.internet.tcp import Port
 from twisted.web import (
     http,
     http_headers,
@@ -668,6 +670,21 @@ class ChevahCommonsFactory(object):
     # Class member used for generating unique integers.
     _unique_id = 0
 
+    def ascii(self):
+        """
+        Return a unique (per session) ASCII string.
+        """
+        return 'ascii_str' + str(self.getUniqueInteger())
+
+    def TCPPort(self, factory=None, address='', port=1234):
+        """
+        Return a Twisted TCP Port.
+        """
+        if factory is None:
+            factory = Factory()
+
+        return Port(port, factory, interface=address)
+
     def string(self, *args, **kwargs):
         """
         Shortcut for getUniqueString.
@@ -868,13 +885,6 @@ class ChevahCommonsFactory(object):
         """
         path = path.encode('utf-8')
         return urllib.quote(path, '/')
-
-    def makeMock(self):
-        """
-        Creates a Mock.
-        """
-        mock = Mock()
-        return mock
 
     def makeDeferredSucceed(self, data=None):
         """

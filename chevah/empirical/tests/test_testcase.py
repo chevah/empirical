@@ -8,12 +8,22 @@ from __future__ import with_statement
 from twisted.internet import defer, reactor
 from twisted.internet.task import Clock
 
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.empirical import EmpiricalTestCase, mk
 
 
-class TestChevahTestCase(ChevahTestCase):
+class Dummy(object):
     """
-    General tests for ChevahTestCase.
+    Dummy class to help with testing.
+    """
+    _value = mk.string()
+
+    def method(self):
+        return self._value
+
+
+class TestEmpiricalTestCase(EmpiricalTestCase):
+    """
+    General tests for EmpiricalTestCase.
     """
 
     def test_runDeferred_non_deferred(self):
@@ -115,7 +125,7 @@ class TestChevahTestCase(ChevahTestCase):
         # case it was removed by previous calls.
         initial_pool = reactor.getThreadPool()
 
-        with self.Patch.object(reactor, 'stop') as mock_stop:
+        with self.patchObject(reactor, 'stop') as mock_stop:
             self.runDeferred(deferred, timeout=0.3, prevent_stop=True)
 
         # reactor.stop() is not called
@@ -126,7 +136,7 @@ class TestChevahTestCase(ChevahTestCase):
         self.assertIs(initial_pool, reactor.threadpool)
 
         # Run again and we should still have the same pool.
-        with self.Patch.object(reactor, 'startRunning') as mock_start:
+        with self.patchObject(reactor, 'startRunning') as mock_start:
             self.runDeferred(
                 defer.succeed(True), timeout=0.3, prevent_stop=True)
 
@@ -237,3 +247,96 @@ class TestChevahTestCase(ChevahTestCase):
 
         with self.assertRaises(AssertionError):
             self.failureResultOf(deferred)
+
+    def test_cleanTemporaryFolder_empty(self):
+        """
+        Empty list is returned if temporary folder does not contain test
+        files for folders.
+        """
+        result = self.cleanTemporaryFolder()
+
+        self.assertIsEmpty(result)
+
+    def test_cleanTemporaryFolder_content(self):
+        """
+        The list of members is returned if temporary folder contains test
+        files for folders.
+
+        Only root members are returned and folders are removed recursively.
+        """
+        file1 = mk.fs.createFileInTemp()
+        folder1 = mk.fs.createFolderInTemp()
+        folder1_file2 = folder1[:]
+        folder1_file2.append(mk.makeFilename())
+
+        result = self.cleanTemporaryFolder()
+
+        self.assertEqual(2, len(result))
+        self.assertContains(file1[-1], result)
+        self.assertContains(folder1[-1], result)
+
+    def test_assertTempIsClean_clean_temp(self):
+        """
+        No error is raised if temp folder is clean.
+        """
+        self.assertTempIsClean()
+
+    def test_assertTempIsClean_dirty(self):
+        """
+        If temp is not clean an error is raised and then temp folders
+        is cleaned.
+        """
+        temp_segments = mk.fs.createFileInTemp()
+
+        with self.assertRaises(AssertionError) as context:
+            self.assertTempIsClean()
+
+        self.assertEqual(
+            u'Temporary folder is not clean.', context.exception.message)
+
+        self.assertFalse(mk.fs.exists(temp_segments))
+
+    def test_patch(self):
+        """
+        It can be used for patching classes.
+        """
+        value = mk.string()
+
+        with self.patch(
+                'chevah.empirical.tests.test_testcase.Dummy.method',
+                return_value=value,
+            ):
+            instance = Dummy()
+            self.assertEqual(value, instance.method())
+
+        # After exiting the context, the value is restored.
+        instance = Dummy()
+        self.assertEqual(Dummy._value, instance.method())
+
+    def test_patchObject(self):
+        """
+        It can be used for patching an instance of an object.
+        """
+        value = mk.string()
+        one_instance = Dummy()
+
+        with self.patchObject(
+                one_instance, 'method', return_value=value):
+            self.assertEqual(value, one_instance.method())
+
+            # All other instances are not affected.
+            new_instance = Dummy()
+            self.assertEqual(Dummy._value, new_instance.method())
+
+        # After exiting the context, the value is restored.
+        self.assertEqual(Dummy._value, one_instance.method())
+
+    def test_Mock(self):
+        """
+        It creates a generic mock object.
+        """
+        value = mk.string()
+
+        mock = self.Mock(return_value=value)
+
+        self.assertEqual(value, mock())

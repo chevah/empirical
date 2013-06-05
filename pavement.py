@@ -8,7 +8,7 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.20.1'
+BRINK_VERSION = '0.22.0'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
@@ -93,15 +93,14 @@ test_normal
 test_super
 
 SETUP['product']['name'] = 'chevah-empirical'
-SETUP['folders']['source'] = u'chevah/empirical'
+SETUP['folders']['source'] = pave.fs.join([u'chevah', 'empirical'])
 SETUP['github']['repo'] = u'chevah/empirical'
 SETUP['repository']['name'] = u'empirical'
 SETUP['pocket-lint']['include_files'] = ['pavement.py']
 SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
-# SETUP['buildbot']['server'] = '127.0.0.1'
-# SETUP['buildbot']['port'] = 10087
+SETUP['test']['elevated'] = None
 
 
 @task
@@ -138,6 +137,16 @@ def build():
     """
     Copy new source code to build folder.
     """
+
+    # Clean previous files.
+    pave.fs.deleteFolder([
+        pave.path.build,
+        pave.getPythonLibPath(python_version=PYTHON_VERSION),
+        'chevah',
+        'emprical',
+        ])
+    pave.fs.deleteFolder([pave.path.build, 'setup-build'])
+
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', 'build', '--build-base', build_target]
     print "Building in " + build_target

@@ -14,7 +14,7 @@ import sys
 import time
 
 from bunch import Bunch
-from mock import patch
+from mock import patch, Mock
 from nose import SkipTest
 from twisted.internet.defer import Deferred
 from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
@@ -618,6 +618,8 @@ class ChevahTestCase(TwistedTestCase):
     os_name = os.name
     Bunch = Bunch
     Contains = Contains
+    Mock = Mock
+    #: Obsolete. Please use self.patch and self.patchObject.
     Patch = patch
 
     def setUp(self):
@@ -702,7 +704,7 @@ class ChevahTestCase(TwistedTestCase):
             if not factory.fs.isFolder(temp_segments):
                 factory.fs.createFolder(temp_segments)
 
-        ChevahTestCase.assertTempIsClean(silent=True)
+        cls.cleanTemporaryFolder()
 
     @classmethod
     def haveSuperPowers(cls):
@@ -760,9 +762,26 @@ class ChevahTestCase(TwistedTestCase):
                 raise
 
     @staticmethod
-    def assertTempIsClean(silent=False):
-        '''Assert that the temporary folder does not contains any testing
-        specific files for folders.'''
+    def patch(*args, **kwargs):
+        """
+        Helper for generic patching.
+        """
+        return patch(*args, **kwargs)
+
+    @staticmethod
+    def patchObject(*args, **kwargs):
+        """
+        Helper for patching objects.
+        """
+        return patch.object(*args, **kwargs)
+
+    @staticmethod
+    def cleanTemporaryFolder():
+        """
+        Clean all test files from temporary folder.
+
+        Return a list of members which were removed.
+        """
         temp_segments = factory.fs.temp_segments
 
         if not factory.fs.exists(temp_segments):
@@ -775,21 +794,28 @@ class ChevahTestCase(TwistedTestCase):
         else:
             temp_avatar = DefaultAvatar()
 
-        temp_avatar._home_folder_path = factory.fs.temp_path
-        temp_avatar._root_folder_path = factory.fs.temp_path
-
         temp_filesystem = LocalFilesystem(avatar=temp_avatar)
-        dirty = False
-        for member in (temp_filesystem.getFolderContent([])):
+        temp_members = []
+        for member in (temp_filesystem.getFolderContent(temp_segments)):
             if member.find(TEST_NAME_MARKER) != -1:
-                dirty = True
-                segments = [member]
+                temp_members.append(member)
+                segments = temp_segments[:]
+                segments.append(member)
                 if temp_filesystem.isFolder(segments):
                     temp_filesystem.deleteFolder(segments, recursive=True)
                 else:
                     temp_filesystem.deleteFile(segments)
 
-        if dirty and not silent:
+        return temp_members
+
+    @classmethod
+    def assertTempIsClean(cls):
+        """
+        Raise an error if the temporary folder contains any testing
+        specific files for folders.
+        """
+        members = cls.cleanTemporaryFolder()
+        if members:
             raise AssertionError(u'Temporary folder is not clean.')
 
     def assertIsFalse(self, value):

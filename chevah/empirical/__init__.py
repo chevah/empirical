@@ -11,6 +11,6 @@ from chevah.empirical.testcase import (
     )
 from chevah.empirical.mockup import factory
 
-# Silence the linter.
-ChevahTestCase
-factory
+# Export to new names.
+EmpiricalTestCase = ChevahTestCase
+mk = factory
