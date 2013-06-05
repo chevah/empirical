@@ -677,6 +677,9 @@ class ChevahCommonsFactory(object):
         return 'ascii_str' + str(self.getUniqueInteger())
 
     def TCPPort(self, factory=None, address='', port=1234):
+        """
+        Return a Twisted TCP Port.
+        """
         if factory is None:
             factory = Factory()
 
