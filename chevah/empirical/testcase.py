@@ -676,7 +676,8 @@ class ChevahTestCase(TwistedTestCase):
             class_name,
             self._testMethodName)
 
-    def getHostname(self):
+    @staticmethod
+    def getHostname():
         """
         Return the hostname of the current system.
         """
