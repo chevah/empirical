@@ -1,6 +1,20 @@
 Release notes for chevah.empirical
 ==================================
 
+
+0.15.1 - 26/06/2013
+-------------------
+
+* Move elevated constants to chevah.compat.
+
+
+0.15.0 - 26/06/2013
+-------------------
+
+* Make ChevahTestCase.getHostname a static method.
+
+
+
 0.14.0 - 04/06/2013
 -------------------
 
