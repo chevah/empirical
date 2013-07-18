@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.0 - 18/07/2013
+-------------------
+
+* Quick and dirty fix for resolving 2nd level deferrers.
+
+
 0.15.1 - 26/06/2013
 -------------------
 

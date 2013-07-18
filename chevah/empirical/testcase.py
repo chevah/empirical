@@ -303,6 +303,9 @@ class TwistedTestCase(TestCase):
         result = deferred.result
         if isinstance(result, Deferred):
             self._runDeferred(result, timeout=timeout, debug=debug)
+            result = deferred.result
+            if isinstance(result, Deferred):
+                self._runDeferred(result, timeout=timeout, debug=debug)
 
     def executeReactor(self, timeout=1, debug=False, run_once=False):
         """
