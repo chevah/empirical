@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.1 - 18/07/2013
+-------------------
+
+* Fix previous bad release due to missing import line.
+
+
 0.16.0 - 18/07/2013
 -------------------
 
