@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.2 - 20/07/2013
+-------------------
+
+* Add tests for running deferred with chained callbacks.
+
+
 0.16.1 - 18/07/2013
 -------------------
 
