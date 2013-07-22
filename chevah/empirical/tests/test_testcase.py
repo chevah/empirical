@@ -66,34 +66,35 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         tu return a result.
         """
         deferred = defer.Deferred()
-        reactor.callLater(0.1, lambda d: d.callback('ok'), deferred)
+        reactor.callLater(0.001, lambda d: d.callback('ok'), deferred)
 
         self.runDeferred(deferred, timeout=0.3)
 
         self.assertEqual('ok', deferred.result)
 
-    def test_runDeferred_recursive(self):
+    def test_runDeferred_callbacks_list(self):
         """
         runDeferred will execute the reactor and wait for deferred
-        to return a final result.
-
-        When a deferred is a returned, it will do a chained execution.
+        to return a non-deferred result from the deferrers callbacks list.
         """
-        # Here is a bit of brain attack.
-        # We wait for deferred_2, which already got a result, but
-        # it also has a callback which returns deferred_1.
-        # deferred_1 will get the result at some point, and will pass it
-        # to deferred_2
-        # deferred.callback() can not be called directly with a deferred.
-        deferred_1 = defer.Deferred()
-        deferred_2 = defer.Deferred()
-        deferred_2.callback('start')
-        deferred_2.addCallback(lambda d: deferred_1)
-        reactor.callLater(0.1, lambda d: d.callback('ok'), deferred_1)
+        # We use an uncalled deferred, to make sure that callbacks are not
+        # executed when we call addCallback.
+        deferred = defer.Deferred()
+        two_deferred = defer.Deferred()
+        three_deferred = defer.Deferred()
+        four_deferred = defer.Deferred()
+        deferred.addCallback(lambda result: two_deferred)
+        deferred.addCallback(lambda result: three_deferred)
+        deferred.addCallback(lambda result: four_deferred)
+        reactor.callLater(0.001, lambda d: d.callback('one'), deferred)
+        reactor.callLater(0.001, lambda d: d.callback('two'), two_deferred)
+        reactor.callLater(
+            0.002, lambda d: d.callback('three'), three_deferred)
+        reactor.callLater(0.003, lambda d: d.callback('four'), four_deferred)
 
-        self.runDeferred(deferred_2, timeout=0.3)
+        self.runDeferred(deferred, timeout=0.3)
 
-        self.assertEqual('ok', deferred_2.result)
+        self.assertEqual('four', deferred.result)
 
     def test_runDeferred_cleanup(self):
         """
