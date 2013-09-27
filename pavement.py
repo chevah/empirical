@@ -101,7 +101,10 @@ SETUP['product']['name'] = 'chevah-empirical'
 SETUP['folders']['source'] = pave.fs.join([u'chevah', 'empirical'])
 SETUP['github']['repo'] = u'chevah/empirical'
 SETUP['repository']['name'] = u'empirical'
-SETUP['pocket-lint']['include_files'] = ['pavement.py']
+SETUP['pocket-lint']['include_files'] = [
+    'pavement.py',
+    'release-notes.rst',
+    ]
 SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
