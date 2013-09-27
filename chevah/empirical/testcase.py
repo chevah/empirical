@@ -738,16 +738,18 @@ class ChevahTestCase(TwistedTestCase):
     @property
     def _caller_success_member(self):
         '''Retrieve the 'success' member from the test case.'''
-        success = None
-        for i in xrange(2, 6):
+        success_state = None
+        # We search starting with second stack, since first stack is the
+        # current stack and we don't care about it.
+        for level in inspect.stack()[1:]:
             try:
-                success = inspect.stack()[i][0].f_locals['success']
+                success_state = level[0].f_locals['success']
                 break
             except KeyError:
-                success = None
-        if success is None:
+                success_state = None
+        if success_state is None:
             raise AssertionError(u'Failed to find "success" attribute.')
-        return success
+        return success_state
 
     @contextmanager
     def listenPort(self, ip, port):

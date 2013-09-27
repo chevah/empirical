@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.3 - 27/09/2013
+-------------------
+
+* Fix retrieving test success state from full stack.
+
+
 0.16.2 - 20/07/2013
 -------------------
 
@@ -30,7 +36,6 @@ Release notes for chevah.empirical
 -------------------
 
 * Make ChevahTestCase.getHostname a static method.
-
 
 
 0.14.0 - 04/06/2013
