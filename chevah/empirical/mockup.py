@@ -668,7 +668,7 @@ class ChevahCommonsFactory(object):
     '''
 
     # Class member used for generating unique integers.
-    _unique_id = 0
+    _unique_id = random.randint(0, 5000)
 
     def ascii(self):
         """
