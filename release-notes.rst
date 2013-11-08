@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.5 - 08/11/2013
+-------------------
+
+* Fix fake reactor shutdown to set running flag.
+
+
+0.16.4 - 06/11/2013
+-------------------
+
+* Use pseudo-random generator for mk.number().
+
+
 0.16.3 - 27/09/2013
 -------------------
 

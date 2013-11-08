@@ -112,6 +112,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
 
         self.assertIsTrue(deferred.result)
         self.assertIsNone(reactor.threadpool)
+        self.assertFalse(reactor.running)
 
     def test_runDeferred_prevent_stop(self):
         """

@@ -215,6 +215,7 @@ class TwistedTestCase(TestCase):
         reactor._startedBefore = False
         reactor._started = False
         reactor._justStopped = False
+        reactor.running = False
 
     def assertReactorIsClean(self):
         """
