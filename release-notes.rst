@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.6 - 08/11/2013
+-------------------
+
+* On reactor stop, restore reactor startup event.
+
+
 0.16.5 - 08/11/2013
 -------------------
 
