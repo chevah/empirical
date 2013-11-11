@@ -215,6 +215,11 @@ class TwistedTestCase(TestCase):
         reactor._startedBefore = False
         reactor._started = False
         reactor._justStopped = False
+        reactor.running = False
+        # Start running has consumed the startup events, so we need
+        # to restore them.
+        reactor.addSystemEventTrigger(
+            'during', 'startup', reactor._reallyStartRunning)
 
     def assertReactorIsClean(self):
         """
