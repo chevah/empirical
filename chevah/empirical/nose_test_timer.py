@@ -55,7 +55,11 @@ class TestTimer(Plugin):
 
     def _timeTaken(self, time_now, kind):
         if hasattr(self, '_timer'):
-            taken = time_now - self._timer[kind]
+            if self._timer[kind]:
+                taken = time_now - self._timer[kind]
+            else:
+                # Test was skipped and it has no timer set.
+                taken = 0.0
         else:
             # test died before it ran (probably error in setup())
             # or success/failure added before test started probably

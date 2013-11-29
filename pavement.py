@@ -159,7 +159,7 @@ def build():
         pave.path.build,
         pave.getPythonLibPath(python_version=PYTHON_VERSION),
         'chevah',
-        'emprical',
+        'empirical',
         ])
     pave.fs.deleteFolder([pave.path.build, 'setup-build'])
 
