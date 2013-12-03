@@ -342,3 +342,35 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         mock = self.Mock(return_value=value)
 
         self.assertEqual(value, mock())
+
+    def test_skipped_test(self):
+        """
+        Just a test to check that everything works ok with skipped tests
+        in a normal testcase.
+        """
+        raise self.skipTest()
+
+
+class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
+    """
+    Test skipped test at setup level.
+    """
+
+    def setUp(self):
+        """
+        Skip the test, after initializing parent.
+
+        This will prevent calling of tearDown.
+        """
+        super(TestEmpiricalTestCaseSkipSetup, self).setUp()
+
+        raise self.skipTest()
+
+    def tearDown(self):
+        raise AssertionError('Should not be called.')
+
+    def test_skipped_test(self):
+        """
+        Just a test to check that everything works ok with skipped tests.
+        """
+        raise AssertionError('Should not be called')

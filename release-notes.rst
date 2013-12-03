@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.16.7 - 29/11/2013
+-------------------
+
+* Fix test timer for skipped tests.
+
+
 0.16.6 - 08/11/2013
 -------------------
 
