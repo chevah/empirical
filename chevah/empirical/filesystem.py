@@ -3,7 +3,6 @@
 """
 Filesystem helpers for tests.
 """
-from __future__ import with_statement
 import hashlib
 import os
 import re
@@ -16,17 +15,81 @@ from chevah.empirical.constants import (
 
 
 class LocalTestFilesystem(LocalFilesystem):
-    '''Testing specific methods for local filesystem.'''
+    """
+    A local filesystem designed to support testing.
+    """
+
+    __temporary_folders__ = []
+
+    def __init__(self, avatar=None):
+        """
+        Create an unique temp folder.
+        """
+        super(LocalTestFilesystem, self).__init__(avatar=avatar)
+        self._temp_uuid = u'%s%s' % (uuid.uuid4(), TEST_NAME_MARKER)
+        self.__class__.__temporary_folders__.append(self.temp_segments)
+
+    @property
+    def temp_segments(self):
+        """
+        Return the segments for the temporary folder.
+        """
+        temp_segments = LocalFilesystem.temp_segments.fget(self)
+        temp_segments.append(self._temp_uuid)
+        return temp_segments
+
+    @classmethod
+    def getAllTemporaryFolders(cls):
+        """
+        Return a list with all created temporary folders.
+        """
+        return cls.__temporary_folders__[:]
+
+    def checkCleanTemporaryFolders(self):
+        """
+        Check that no previously created temporary folder exists.
+        """
+        remaining_folders = []
+        for temp in self.getAllTemporaryFolders():
+            if self.exists(temp):
+                remaining_folders.append(temp)
+                self.deleteFolder(temp, recursive=True)
+
+        if remaining_folders:
+            raise AssertionError(
+                'Not all temporary folders were cleaned: %s' % (
+                    remaining_folders))
+
+    def setUpTemporaryFolder(self):
+        """
+        Create temporary folder.
+        """
+        if self.exists(self.temp_segments):
+            self.deleteFolder(self.temp_segments, recursive=True)
+            raise AssertionError('Temporary folder already exists at: %s' % (
+                self.temp_segments))
+
+        self.createFolder(self.temp_segments)
+
+    def tearDownTemporaryFolder(self):
+        """
+        Remove temporary folder.
+        """
+        self.deleteFolder(self.temp_segments, recursive=True)
 
     @property
     def home_path(self):
-        '''Return absolute path to home folder.'''
+        """
+        Return absolute path to home folder.
+        """
         segments = self.home_segments
         return self.getRealPathFromSegments(segments)
 
     @property
     def temp_path(self):
-        '''Return absolute path to temporary folder.'''
+        """
+        Return absolute path to temporary folder.
+        """
         segments = self.temp_segments
         return self.getRealPathFromSegments(segments)
 
@@ -190,6 +253,14 @@ class LocalTestFilesystem(LocalFilesystem):
         file_segments.extend(segments)
         return self.getFileSize(file_segments)
 
+    def getFileSizeInTemporary(self, segments):
+        """
+        Get file size relative to temporary folder.
+        """
+        file_segments = self.temp_segments[:]
+        file_segments.extend(segments)
+        return self.getFileSize(file_segments)
+
     def getFileMD5Sum(self, segments):
         '''Get MD5 checksum.'''
         md5_sum = hashlib.md5()
@@ -203,8 +274,18 @@ class LocalTestFilesystem(LocalFilesystem):
         return md5_sum.digest()
 
     def getFileMD5SumInHome(self, segments):
-        '''Get file MD5 sum relative to home folder.'''
+        """
+        Get file MD5 sum relative to home folder.
+        """
         file_segments = self.home_segments[:]
+        file_segments.extend(segments)
+        return self.getFileMD5Sum(file_segments)
+
+    def getFileMD5SumInTemporary(self, segments):
+        """
+        Get file MD5 sum relative to temporary folder.
+        """
+        file_segments = self.temp_segments[:]
         file_segments.extend(segments)
         return self.getFileMD5Sum(file_segments)
 

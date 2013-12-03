@@ -692,7 +692,9 @@ class ChevahTestCase(TwistedTestCase):
 
     @classmethod
     def initialize(cls, drop_user):
-        '''Initialize the testing environment.'''
+        """
+        Initialize the testing environment.
+        """
         cls._drop_user = drop_user
         os.environ['DROP_USER'] = drop_user
 
@@ -704,13 +706,6 @@ class ChevahTestCase(TwistedTestCase):
 
         if 'USERNAME' in os.environ and not 'USER' in os.environ:
             os.environ['USER'] = os.environ['USERNAME']
-
-        # Make sure that we have a temporary folder on Windows.
-        # When the temporary folder is missing, we try to create it.
-        if os.name == 'nt':
-            temp_segments = factory.fs.temp_segments
-            if not factory.fs.isFolder(temp_segments):
-                factory.fs.createFolder(temp_segments)
 
         cls.cleanTemporaryFolder()
 
@@ -739,6 +734,14 @@ class ChevahTestCase(TwistedTestCase):
     def skipTest(message=''):
         '''Return a SkipTest exception.'''
         return SkipTest(message)
+
+    @classmethod
+    def runOnOS(cls, name):
+        """
+        Execute the test only on os with `name`.
+        """
+        if cls.os_name != name:
+            raise cls.skipTest()
 
     @property
     def _caller_success_member(self):
@@ -795,7 +798,7 @@ class ChevahTestCase(TwistedTestCase):
         temp_segments = factory.fs.temp_segments
 
         if not factory.fs.exists(temp_segments):
-            return
+            return []
 
         # In case we are running the test suite as super user,
         # we use super filesystem for cleaning.
@@ -826,7 +829,8 @@ class ChevahTestCase(TwistedTestCase):
         """
         members = cls.cleanTemporaryFolder()
         if members:
-            raise AssertionError(u'Temporary folder is not clean.')
+            raise AssertionError(u'Temporary folder is not clean. %s' % (
+                members))
 
     def assertIsFalse(self, value):
         '''Raise an exception if value is not 'False'.'''

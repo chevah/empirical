@@ -13,12 +13,12 @@ if os.name == 'nt':
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.24.0'
+BRINK_VERSION = '0.31.1'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
-    'chevah-compat==0.7.5',
+    'chevah-compat==0.11.0',
     ]
 
 BUILD_PACKAGES = [
@@ -108,7 +108,7 @@ SETUP['pocket-lint']['include_files'] = [
 SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
-SETUP['test']['elevated'] = None
+SETUP['test']['elevated'] = 'elevated'
 
 
 @task
@@ -153,16 +153,15 @@ def build():
     """
     Copy new source code to build folder.
     """
-
     # Clean previous files.
-    pave.fs.deleteFolder([
+    install_folder = [
         pave.path.build,
         pave.getPythonLibPath(python_version=PYTHON_VERSION),
         'chevah',
         'empirical',
-        ])
+        ]
+    pave.fs.deleteFolder(install_folder)
     pave.fs.deleteFolder([pave.path.build, 'setup-build'])
-
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', 'build', '--build-base', build_target]
     print "Building in " + build_target

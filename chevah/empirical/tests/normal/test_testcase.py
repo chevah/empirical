@@ -293,8 +293,8 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         with self.assertRaises(AssertionError) as context:
             self.assertTempIsClean()
 
-        self.assertEqual(
-            u'Temporary folder is not clean.', context.exception.message)
+        self.assertStartsWith(
+            u'Temporary folder is not clean. [', context.exception.message)
 
         self.assertFalse(mk.fs.exists(temp_segments))
 
@@ -305,7 +305,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         value = mk.string()
 
         with self.patch(
-                'chevah.empirical.tests.test_testcase.Dummy.method',
+                'chevah.empirical.tests.normal.test_testcase.Dummy.method',
                 return_value=value,
             ):
             instance = Dummy()

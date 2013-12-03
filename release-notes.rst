@@ -2,6 +2,47 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.17.5 - 03/12/2013
+-------------------
+
+* Re-release after merging 0.16.7.
+* Update to latest compat and brink.
+
+
+0.17.4 - 29/11/2013
+-------------------
+
+* Support temporary folders for Windows elevated accounts.
+
+
+0.17.3 - 29/11/2013
+-------------------
+
+* Update LocalTestFilesystem to support chevah.server usage.
+
+
+0.17.2 - 29/11/2013
+-------------------
+
+* Fix duplicate creation of temp folder on Windows.
+* Fix build cleanup.
+* Check that temporary folder does not exists when setting a new temp
+  folder.
+
+
+0.17.1 - 29/11/2013
+-------------------
+
+* Bad release.
+
+
+0.17.0 - 29/11/2013
+-------------------
+
+* Add support for having separate temporary folders for each
+  LocalTestFilesystem.
+
+
 0.16.7 - 29/11/2013
 -------------------
 
