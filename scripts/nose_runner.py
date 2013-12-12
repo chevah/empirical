@@ -21,11 +21,12 @@ if __name__ == '__main__':
     '''
     if len(sys.argv) < 2:
         print (
-            u'Run the test suite using drop privilges username as first '
+            u'Run the test suite using drop privileges username as first '
             u'arguments. Use "-" if you do not want elevated mode.')
         sys.exit(1)
 
-    ChevahTestCase.initialize(drop_user=sys.argv[1])
+    drop_user = sys.argv[1]
+    ChevahTestCase.initialize(drop_user=drop_user)
     ChevahTestCase.dropPrivileges()
 
     new_argv = ['chevah-test-runner']
@@ -42,8 +43,11 @@ if __name__ == '__main__':
         threads = threading.enumerate()
         if len(threads) > 1:
             print "There are still active threads: %s" % threads
+
         # We do a brute force exit here, since sys.exit will wait for
         # unjoined threads.
+        # We have to do some manual work to compensate for skipping sys.exit()
+        sys.exitfunc()
         # Don't forget to flush the toilet.
         sys.stdout.flush()
         sys.stderr.flush()

@@ -767,9 +767,21 @@ class ChevahTestCase(TwistedTestCase):
         test_socket.listen(0)
         yield
         try:
-            test_socket.shutdown(2)
+            # We use shutdown to force closing the socket.
+            test_socket.shutdown(socket.SHUT_RDWR)
         except socket.error, error:
-            if 'solaris-10' in self.getHostname() and error.args[0] == 134:
+            # When we force close the socket, we might get some errors
+            # that the socket is already closed... have no idea why.
+            if sys.platform.startswith('solaris') and error.args[0] == 134:
+                pass
+            elif sys.platform.startswith('aix') and error.args[0] == 76:
+                # On AIX socket is closed with an Not connected error.
+                pass
+            elif self.os_name == 'nt' and error.args[0] == 10057:
+                # On Windows the error is:
+                # A request to send or receive data was disallowed because the
+                # socket is not connected and (when sending on a datagram
+                # socket using a sendto call) no address was supplied
                 pass
             else:
                 raise
@@ -863,7 +875,7 @@ class ChevahTestCase(TwistedTestCase):
         try:
             test_socket.connect((ip, port))
             sock_name = test_socket.getsockname()
-            test_socket.shutdown(2)
+            test_socket.shutdown(socket.SHUT_RDWR)
             if debug:
                 print 'Connected as: %s:%d' % (sock_name[0], sock_name[1])
         except:
@@ -888,11 +900,14 @@ class ChevahTestCase(TwistedTestCase):
                 ip, port))
 
     def assertEqual(self, first, second, msg=None):
-        '''Extra checkes for assert equal.'''
+        '''Extra checks for assert equal.'''
         try:
             super(ChevahTestCase, self).assertEqual(first, second, msg)
         except AssertionError, error:
-            raise AssertionError(error.message.encode('utf-8'))
+            message = error.message
+            if isinstance(message, unicode):
+                message = message.encode('utf-8')
+            raise AssertionError(message)
 
         if (type(first) == unicode and type(second) == str):
             if not msg:
@@ -904,7 +919,7 @@ class ChevahTestCase(TwistedTestCase):
             if not msg:
                 msg = u'Type of "%s" is str while for "%s" is unicode.' % (
                     first, second)
-            raise AssertionError(msg)
+            raise AssertionError(msg.encode('utf-8'))
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         '''Raise assertion error if failure is not of required type.'''
@@ -1125,36 +1140,3 @@ class CommandTestCase(ChevahTestCase):
         sys.stderr = sys.__stderr__
         sys.exit = self.sys_exit
         super(CommandTestCase, self).tearDown()
-
-
-def setup_os(users, groups):
-    '''Create testing environemnt
-
-    Add users, groups, create temporary folders and other things required
-    by the testing system.
-    '''
-    from chevah.compat.administration import OSAdministration
-
-    os_administration = OSAdministration()
-    for group in groups:
-        os_administration.addGroup(group)
-
-    for user in users:
-        os_administration.addUser(user)
-
-    for group in groups:
-        os_administration.addUsersToGroup(group, group.members)
-
-
-def teardown_os(users, groups):
-    '''Revert changes from setUpOS.'''
-
-    from chevah.compat.administration import OSAdministration
-
-    os_administration = OSAdministration()
-
-    for group in groups:
-        os_administration.deleteGroup(group)
-
-    for user in users:
-        os_administration.deleteUser(user)

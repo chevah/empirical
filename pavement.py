@@ -12,13 +12,13 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 # Marker for paver.sh.
-# This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.31.1'
+# This value is paver by bash. Use a strict format.
+BRINK_VERSION = '0.32.0'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
-    'chevah-compat==0.11.0',
+    'chevah-compat==0.12.1',
     ]
 
 BUILD_PACKAGES = [

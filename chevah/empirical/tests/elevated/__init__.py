@@ -5,14 +5,12 @@ Tests for empirical package executed under elevated accounts.
 """
 from chevah.compat import process_capabilities
 from chevah.compat.testing import (
+    setup_access_control,
+    teardown_access_control,
     TEST_GROUPS,
     TEST_USERS,
     )
 
-from chevah.empirical.testcase import (
-    setup_os,
-    teardown_os,
-    )
 from chevah.empirical import EmpiricalTestCase
 
 
@@ -36,12 +34,12 @@ def setup_package():
 
     # Initialize the testing OS.
     try:
-        setup_os(users=TEST_USERS, groups=TEST_GROUPS)
+        setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except:
         import traceback
         error = traceback.format_exc()
         try:
-            teardown_os(users=TEST_USERS, groups=TEST_GROUPS)
+            teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
         except:
             pass
         raise AssertionError(
@@ -49,4 +47,4 @@ def setup_package():
 
 
 def teardown_package():
-    teardown_os(users=TEST_USERS, groups=TEST_GROUPS)
+    teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)

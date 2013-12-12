@@ -2,6 +2,26 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.18.2 - 10/12/2013
+-------------------
+
+* Fix listenPort() with Windows shutdown exception.
+
+
+0.18.1 - 10/12/2013
+-------------------
+
+* Update listenPort() to support AIX.
+
+
+0.18.0 - 09/12/2013
+-------------------
+
+* Move os accounts and group initialization into chevah.compat package.
+* Call sys.exitfunc before exiting the test runner.
+* Update build system to latest brink for independent paver.sh script.
+
+
 0.17.5 - 03/12/2013
 -------------------
 
