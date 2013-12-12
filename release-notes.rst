@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.19.0 - 12/12/2013
+-------------------
+
+* Check working folder for temporary files or folders.
+
+
 0.18.2 - 10/12/2013
 -------------------
 

@@ -92,7 +92,7 @@ class TwistedTestCase(TestCase):
             except KeyError:
                 success = None
         if success is None:
-            raise AssertionError(u'Failed to find "success" attribute.')
+            raise AssertionError('Failed to find "success" attribute.')
         return success
 
     def tearDown(self):
@@ -140,7 +140,7 @@ class TwistedTestCase(TestCase):
         """
         self._timeout_reached = True
         failure = AssertionError(
-            u'Reactor took more than %.2f seconds to execute.' % timeout)
+            'Reactor took more than %.2f seconds to execute.' % timeout)
         self._reactor_timeout_failure = failure
 
     def _initiateTestReactor(self, timeout=1):
@@ -364,8 +364,8 @@ class TwistedTestCase(TestCase):
             if run_once:
                 if have_callbacks:
                     raise AssertionError(
-                        u'Reactor queue still contains delayed deferred.\n'
-                        u'%s' % (self._reactorQueueToString()))
+                        'Reactor queue still contains delayed deferred.\n'
+                        '%s' % (self._reactorQueueToString()))
                 break
 
             # Look at writters buffers:
@@ -580,7 +580,7 @@ class TwistedTestCase(TestCase):
 
         if not failure.check(failure_class):
             raise AssertionError(
-                u'Failure %s is not of type %s' % (
+                'Failure %s is not of type %s' % (
                     failure, failure_class))
 
     def ignoreFailure(self, deferred):
@@ -597,7 +597,7 @@ class TwistedTestCase(TestCase):
         Check that deferred is a failure.
         """
         if not isinstance(deferred.result, Failure):
-            raise AssertionError(u'Deferred is not a failure.')
+            raise AssertionError('Deferred is not a failure.')
 
     def assertIsNotFailure(self, deferred):
         """
@@ -612,7 +612,7 @@ class TwistedTestCase(TestCase):
             error = deferred.result.value
             self.ignoreFailure(deferred)
             raise AssertionError(
-                u'Deferred contains a failure: %s' % (error))
+                'Deferred contains a failure: %s' % (error))
 
 
 class ChevahTestCase(TwistedTestCase):
@@ -634,15 +634,8 @@ class ChevahTestCase(TwistedTestCase):
         self.test_segments = None
 
     def tearDown(self):
-        if self.test_segments:
-            if factory.fs.isFolder(self.test_segments):
-                factory.fs.deleteFolder(
-                    self.test_segments, recursive=True)
-            if factory.fs.isFile(self.test_segments):
-                factory.fs.deleteFile(self.test_segments)
-        # FIXME:922:
-        # Move all filesystem checks into a specialized class
-        self.assertTempIsClean()
+
+        self._checkTemporaryFiles()
 
         threads = threading.enumerate()
         if len(threads) > 1:
@@ -665,6 +658,36 @@ class ChevahTestCase(TwistedTestCase):
                         thread_name, threads))
 
         super(ChevahTestCase, self).tearDown()
+
+    def _checkTemporaryFiles(self):
+        """
+        Check that no temporary files or folders are present.
+        """
+        # FIXME:922:
+        # Move all filesystem checks into a specialized class
+        if self.test_segments:
+            if factory.fs.isFolder(self.test_segments):
+                factory.fs.deleteFolder(
+                    self.test_segments, recursive=True)
+            if factory.fs.isFile(self.test_segments):
+                factory.fs.deleteFile(self.test_segments)
+
+        checks = [
+            self.assertTempIsClean,
+            self.assertWorkingFolderIsClean,
+            ]
+
+        errors = []
+        for check in checks:
+            try:
+                check()
+            except AssertionError, error:
+                errors.append(error.message)
+
+        if errors:
+            raise AssertionError(
+                'There are temporary files or folders left over.\n %s' % (
+                    '\n'.join(errors)))
 
     def shortDescription(self):
         """
@@ -756,7 +779,7 @@ class ChevahTestCase(TwistedTestCase):
             except KeyError:
                 success_state = None
         if success_state is None:
-            raise AssertionError(u'Failed to find "success" attribute.')
+            raise AssertionError('Failed to find "success" attribute.')
         return success_state
 
     @contextmanager
@@ -800,16 +823,29 @@ class ChevahTestCase(TwistedTestCase):
         """
         return patch.object(*args, **kwargs)
 
-    @staticmethod
-    def cleanTemporaryFolder():
+    @classmethod
+    def cleanTemporaryFolder(cls):
         """
         Clean all test files from temporary folder.
 
         Return a list of members which were removed.
         """
-        temp_segments = factory.fs.temp_segments
+        return cls._cleanFolder(factory.fs.temp_segments)
 
-        if not factory.fs.exists(temp_segments):
+    @classmethod
+    def cleanWorkingFolder(cls):
+        path = factory.fs.getAbsoluteRealPath('.')
+        segments = factory.fs.getSegmentsFromRealPath(path)
+        return cls._cleanFolder(segments)
+
+    @staticmethod
+    def _cleanFolder(folder_segments):
+        """
+        Clean all test files from folder_segments.
+
+        Return a list of members which were removed.
+        """
+        if not factory.fs.exists(folder_segments):
             return []
 
         # In case we are running the test suite as super user,
@@ -821,10 +857,10 @@ class ChevahTestCase(TwistedTestCase):
 
         temp_filesystem = LocalFilesystem(avatar=temp_avatar)
         temp_members = []
-        for member in (temp_filesystem.getFolderContent(temp_segments)):
+        for member in (temp_filesystem.getFolderContent(folder_segments)):
             if member.find(TEST_NAME_MARKER) != -1:
                 temp_members.append(member)
-                segments = temp_segments[:]
+                segments = folder_segments[:]
                 segments.append(member)
                 if temp_filesystem.isFolder(segments):
                     temp_filesystem.deleteFolder(segments, recursive=True)
@@ -841,8 +877,21 @@ class ChevahTestCase(TwistedTestCase):
         """
         members = cls.cleanTemporaryFolder()
         if members:
-            raise AssertionError(u'Temporary folder is not clean. %s' % (
-                members))
+            message = u'Temporary folder is not clean. %s' % (
+                u', '.join(members))
+            raise AssertionError(message.encode('utf-8'))
+
+    @classmethod
+    def assertWorkingFolderIsClean(cls):
+        """
+        Raise an error if the current working folder contains any testing
+        specific files for folders.
+        """
+        members = cls.cleanWorkingFolder()
+        if members:
+            message = u'Working folder is not clean. %s' % (
+                u', '.join(members))
+            raise AssertionError(message.encode('utf-8'))
 
     def assertIsFalse(self, value):
         '''Raise an exception if value is not 'False'.'''
@@ -1059,8 +1108,9 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if source does not contain `token`.
         '''
         if not token in source:
-            raise AssertionError('"%s" does not contains "%s".' % (
-                source, token))
+            message = u'"%s" does not contains "%s".' % (
+                source, token)
+            raise AssertionError(message.encode('utf-8'))
 
     def assertNotContains(self, token, source):
         '''
