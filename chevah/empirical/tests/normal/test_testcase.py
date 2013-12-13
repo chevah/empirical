@@ -413,7 +413,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
     def test_assertWorkingFolderIsClean_with_file(self):
         """
         An error is raised if current working folder contains a temporary
-        folder and folder is cleaned.
+        file and file is cleaned.
         """
         name = mk.string()
         open(mk.fs.getEncodedPath(name), 'a').close()
@@ -423,7 +423,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
     def test_assertWorkingFolderIsClean_with_file_and_folder(self):
         """
         An error is raised if current working folder contains a temporary
-        folder and folder is cleaned.
+        folder and file, and folder and folder is cleaned.
         """
         file_name = mk.string()
         folder_name = mk.string()
