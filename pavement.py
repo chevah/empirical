@@ -18,7 +18,7 @@ PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
-    'chevah-compat==0.12.1',
+    'chevah-compat==0.13.0',
     ]
 
 BUILD_PACKAGES = [

@@ -2,6 +2,19 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.20.1 - 17/12/2013
+-------------------
+
+* Rename decorators to conditionals.
+* Allow a list of os names for onOSName conditional.
+
+
+0.20.0 - 17/12/2013
+-------------------
+
+* Add decorators for skipping tests based on OS name or family.
+
+
 0.19.0 - 12/12/2013
 -------------------
 

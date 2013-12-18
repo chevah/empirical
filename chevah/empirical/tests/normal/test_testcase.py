@@ -9,7 +9,7 @@ import sys
 from twisted.internet import defer, reactor
 from twisted.internet.task import Clock
 
-from chevah.empirical import EmpiricalTestCase, mk
+from chevah.empirical import conditionals, EmpiricalTestCase, mk
 
 
 class Dummy(object):
@@ -431,6 +431,32 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         os.mkdir(mk.fs.getEncodedPath(folder_name))
 
         self.check_assertWorkingFolderIsClean([file_name, folder_name])
+
+    @conditionals.onOSFamily('posiX')
+    def test_onOSFamily_posix(self):
+        """
+        Run test only on posix.
+        """
+        if os.name != 'posix':
+            raise AssertionError('This should be called only on posix.')
+
+    @conditionals.onOSName('linuX')
+    def test_onOSName_linux(self):
+        """
+        Run test only on Linux.
+        """
+        if not sys.platform.startswith('linux'):
+            raise AssertionError('This should be called only on Linux.')
+
+    @conditionals.onOSName(['Linux', 'aix'])
+    def test_onOSName_linux_aix(self):
+        """
+        Run test only on Linux and AIX.
+        """
+        if (not sys.platform.startswith('linux') and
+                not sys.platform.startswith('aix')):
+            raise AssertionError(
+                'This should be called only on Linux and AIX.')
 
 
 class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):

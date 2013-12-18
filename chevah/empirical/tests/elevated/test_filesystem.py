@@ -12,7 +12,7 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME,
     TEST_ACCOUNT_PASSWORD,
     )
-from chevah.empirical import EmpiricalTestCase, mk
+from chevah.empirical import EmpiricalTestCase, mk, conditionals
 from chevah.empirical.filesystem import LocalTestFilesystem
 
 
@@ -50,12 +50,11 @@ class TestElevatedLocalTestFilesystem(EmpiricalTestCase):
         finally:
             filesystem.tearDownTemporaryFolder()
 
+    @conditionals.onOSFamily('posix')
     def test_temporary_folder_unix(self):
         """
         On Unix the normal temporary folder is used.
         """
-        self.runOnOS('posix')
-
         filesystem = LocalTestFilesystem(avatar=self.avatar)
 
         # We check that the elevated filesystem start with the same
@@ -65,14 +64,13 @@ class TestElevatedLocalTestFilesystem(EmpiricalTestCase):
 
         self.checkTemporaryFolderInitialization(filesystem)
 
+    @conditionals.onOSFamily('nt')
     def test_temporary_folder_nt(self):
         """
         For elevated accounts temporary folder is not located insider
         user default tempo folder and we can start and stop the
         temporary folder.
         """
-        self.runOnOS('nt')
-
         filesystem = LocalTestFilesystem(avatar=self.avatar)
 
         temporary = filesystem.temp_segments

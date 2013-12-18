@@ -622,7 +622,9 @@ class ChevahTestCase(TwistedTestCase):
     Checks that temporary folder is clean at exit.
     """
 
-    os_name = os.name
+    os_name = process_capabilities.os_name
+    os_family = process_capabilities.os_family
+
     Bunch = Bunch
     Contains = Contains
     Mock = Mock
@@ -758,14 +760,6 @@ class ChevahTestCase(TwistedTestCase):
         '''Return a SkipTest exception.'''
         return SkipTest(message)
 
-    @classmethod
-    def runOnOS(cls, name):
-        """
-        Execute the test only on os with `name`.
-        """
-        if cls.os_name != name:
-            raise cls.skipTest()
-
     @property
     def _caller_success_member(self):
         '''Retrieve the 'success' member from the test case.'''
@@ -795,12 +789,12 @@ class ChevahTestCase(TwistedTestCase):
         except socket.error, error:
             # When we force close the socket, we might get some errors
             # that the socket is already closed... have no idea why.
-            if sys.platform.startswith('solaris') and error.args[0] == 134:
+            if self.os_name == 'solaris' and error.args[0] == 134:
                 pass
-            elif sys.platform.startswith('aix') and error.args[0] == 76:
+            elif self.os_name == 'aix' and error.args[0] == 76:
                 # On AIX socket is closed with an Not connected error.
                 pass
-            elif self.os_name == 'nt' and error.args[0] == 10057:
+            elif self.os_name == 'windows' and error.args[0] == 10057:
                 # On Windows the error is:
                 # A request to send or receive data was disallowed because the
                 # socket is not connected and (when sending on a datagram
