@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.21.0 - 07/02/2014
+-------------------
+
+* Enforce unicode ids for failures.
+
+
 0.20.1 - 17/12/2013
 -------------------
 

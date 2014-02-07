@@ -94,7 +94,8 @@ class TestTimer(Plugin):
         '''
         self._timer = {'inner': 0, 'outer': 0}
         self._initial_target_test = getattr(
-                test.test, test.test._testMethodName)
+            test.test, test.test._testMethodName
+            )
 
         def wrapped_test():
             self._set_start_time(kind='inner')

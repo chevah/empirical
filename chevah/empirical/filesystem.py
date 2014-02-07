@@ -9,9 +9,7 @@ import re
 import uuid
 
 from chevah.compat import LocalFilesystem
-from chevah.empirical.constants import (
-    TEST_NAME_MARKER,
-    )
+from chevah.empirical.constants import TEST_NAME_MARKER
 
 
 class LocalTestFilesystem(LocalFilesystem):
@@ -122,7 +120,7 @@ class LocalTestFilesystem(LocalFilesystem):
         assert self.isFile(segments), 'Could not create file'
 
     def createFileInTemp(self, content=None, prefix=u'', suffix=u'',
-            length=0):
+                         length=0):
         '''Create a file in the temporary folder.'''
         temp_segments = self.temp_segments
 
@@ -198,7 +196,7 @@ class LocalTestFilesystem(LocalFilesystem):
                 return False
 
             if os.name == 'posix':
-                # On Unix it is allowd to clean folder only in these
+                # On Unix it is allowed to clean folder only in these
                 # folders.
                 if (not (
                         path.startswith('/srv') or
@@ -217,9 +215,8 @@ class LocalTestFilesystem(LocalFilesystem):
             return True
 
         if not have_safe_path(path):
-            raise AssertionError((
-                u'Cleaning the folder "%s" is not allowed.' % (path)
-                    ).encode('utf-8'))
+            message = u'Cleaning the folder "%s" is not allowed.' % path
+            raise AssertionError(message.encode('utf-8'))
 
         folder_members = self.getFolderContent(segments)
         for member in folder_members:

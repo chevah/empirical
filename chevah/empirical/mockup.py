@@ -57,14 +57,15 @@ class ThreadedHTTPServer(Thread):
     """
     HTTP Server that runs in a thread.
 
-    This is actual a threaded wrapper arround an HTTP server.
+    This is actual a threaded wrapper around an HTTP server.
 
     Only use it for testing.
     """
     TIMEOUT = 1
 
-    def __init__(self,
-            responses=None, ip='127.0.0.1', port=0, debug=False, cond=None):
+    def __init__(
+            self, responses=None, ip='127.0.0.1', port=0, debug=False,
+            cond=None):
         Thread.__init__(self)
         self.ready = False
         self.cond = cond
@@ -107,26 +108,26 @@ class ThreadedHTTPServer(Thread):
 
 class MockHTTPServer(object):
     """
-    A contex manager which runs a HTTP server for testing simple
+    A context manager which runs a HTTP server for testing simple
     HTTP requests.
 
     After the server is started the ip and port are available in the
     context management instance.
-    >>> responses = [
-    ...     MockHTTPResponse(url='/hello.html', response='Hello!)]
-    >>> with MochHTTPServer(responses=responses) as httpd:
-    ...     print 'Listening at %s:%d' % (httpd.id, httpd.port)
-    ...     self.assertEqual('Hello!', your_get())
 
-    >>> responses = [
-    ...     MockHTTPResponse(
-    ...         url='/hello.php', request='user=John',
-    ...         response_content='Hello John!, response_code=202)]
-    >>> with MockHTTPServer(responses=responses) as httpd:
-    ...     self.assertEqual(
-    ...         'Hello John!',
-    ...         get_you_post(url='hello.php', data='user=John'))
-    '"""
+    responses = [MockHTTPResponse(url='/hello.html', response='Hello!)]
+    with MochHTTPServer(responses=responses) as httpd:
+        print 'Listening at %s:%d' % (httpd.id, httpd.port)
+        self.assertEqual('Hello!', your_get())
+
+    responses = [
+        MockHTTPResponse(
+            url='/hello.php', request='user=John',
+            response_content='Hello John!, response_code=202)]
+    with MockHTTPServer(responses=responses) as httpd:
+        self.assertEqual(
+            'Hello John!',
+            get_you_post(url='hello.php', data='user=John'))
+    """
 
     def __init__(self, responses=None, ip='127.0.0.1', port=0, debug=False):
         '''Initialize a new MockHTTPServer.
@@ -235,8 +236,7 @@ class MockRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def _postResponse(self, request):
         '''Return a tuple containing the'''
         for response in self.__class__.valid_responses:
-            if (response.url == self.path and
-                response.request == request):
+            if response.url == self.path and response.request == request:
                 return response
         return None
 
@@ -278,7 +278,7 @@ class MockHTTPResponse(object):
     '''
 
     def __init__(self, url='', request='', response_content='',
-                response_code=200, content_type='text/html'):
+                 response_code=200, content_type='text/html'):
         self.url = url
         self.request = request
         self.test_response_content = response_content
@@ -340,11 +340,10 @@ class DummyWebRequest(object):
     A dummy Twisted Web Request used in tests.
     """
 
-    def __init__(self,
-            postpath=None, prepath=None, session=None, resource=None,
-            data=None, peer=None, site=None,
-            uri=None, clientproto=None, method=None, secured=False,
-            path=None, host=None):
+    def __init__(
+            self, postpath=None, prepath=None, session=None, resource=None,
+            data=None, peer=None, site=None, uri=None, clientproto=None,
+            method=None, secured=False, path=None, host=None):
 
         channel = factory.makeTwistedWebHTTPChannel()
 
@@ -418,15 +417,17 @@ class DummyWebRequest(object):
         self.finished = 0
 
     def __repr__(self):
-        return (
-            'DummyWebRequest for "%(uri)s", code: %(code)s\n'
-            'response content: "%(response_content)s"\n'
-            'response headers: "%(response_headers)s' % ({
+        data = {
             'uri': self.uri,
             'code': self.code,
             'response_content': self.test_response_content,
             'response_headers': dict(self.responseHeaders.getAllRawHeaders()),
-            }))
+            }
+        return (
+            'DummyWebRequest for "%(uri)s", code: %(code)s\n'
+            'response content: "%(response_content)s"\n'
+            'response headers: "%(response_headers)s' % data
+            )
 
     @property
     def code(self):
@@ -532,10 +533,9 @@ class DummyWebRequest(object):
     def getCookie(self, key):
         return self.received_cookies.get(key)
 
-    def addCookie(self,
-            k, v, expires=None, domain=None, path=None, max_age=None,
-            comment=None, secure=None
-            ):
+    def addCookie(
+            self, k, v, expires=None, domain=None, path=None, max_age=None,
+            comment=None, secure=None):
         """
         Set an outgoing HTTP cookie.
 
@@ -643,7 +643,7 @@ class TestSSLContextFactory(object):
     '''An SSLContextFactory used in tests.'''
 
     def __init__(self, factory, method=None, cipher_list=None,
-                certificate_path=None, key_path=None):
+                 certificate_path=None, key_path=None):
         self.method = method
         self.cipher_list = cipher_list
         self.certificate_path = certificate_path
@@ -741,13 +741,14 @@ class ChevahCommonsFactory(object):
             # padded.
             if min_length + 1 > length:
                 raise AssertionError(
-                    "Can not generate an unique string shortern than %d" % (
+                    "Can not generate an unique string shorter than %d" % (
                         length))
             else:
                 extra_length = length - min_length
                 extra_text = ''.join(
                     random.choice(string.ascii_uppercase + string.digits)
-                        for x in range(extra_length))
+                    for ignore in range(extra_length)
+                    )
 
         return base + extra_text + TEST_NAME_MARKER
 
@@ -762,7 +763,7 @@ class ChevahCommonsFactory(object):
         """
         Generate the Windows token for credentials.
 
-        Only useful on WIndows.
+        Only useful on Windows.
         On Unix it should return None.
         """
         if os.name != 'nt':
@@ -841,7 +842,7 @@ class ChevahCommonsFactory(object):
         return request
 
     def makeSSLContext(self, method=None, cipher_list=None,
-                            certificate_path=None, key_path=None):
+                       certificate_path=None, key_path=None):
         '''Create an SSL context.'''
         if method is None:
             method = SSL.SSLv23_METHOD
@@ -862,7 +863,7 @@ class ChevahCommonsFactory(object):
         return ssl_context
 
     def makeSSLContextFactory(self, method=None, cipher_list=None,
-                            certificate_path=None, key_path=None):
+                              certificate_path=None, key_path=None):
         '''Return an instance of SSLContextFactory.'''
         return TestSSLContextFactory(
             self, method=method, cipher_list=cipher_list,

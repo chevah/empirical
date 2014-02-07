@@ -180,7 +180,8 @@ class TwistedTestCase(TestCase):
                     reactor.threadCallQueue,
                     reactor.getWriters(),
                     reactor.getReaders(),
-                    ))
+                    )
+                )
             t2 = reactor.timeout()
             # For testing we want to force to reactor to wake at an
             # interval of at most 1 second.
@@ -256,8 +257,8 @@ class TwistedTestCase(TestCase):
                     continue
                 raise_failure('delayed calls', delayed_call)
 
-    def runDeferred(self,
-            deferred, timeout=1, debug=False, prevent_stop=False):
+    def runDeferred(
+            self, deferred, timeout=1, debug=False, prevent_stop=False):
         """
         Run the deferred in the reactor loop.
 
@@ -389,8 +390,8 @@ class TwistedTestCase(TestCase):
 
         self._shutdownTestReactor()
 
-    def getDeferredFailure(self,
-            deferred, timeout=1, debug=False, prevent_stop=False):
+    def getDeferredFailure(
+            self, deferred, timeout=1, debug=False, prevent_stop=False):
         """
         Run the deferred and return the failure.
 
@@ -402,7 +403,7 @@ class TwistedTestCase(TestCase):
             deferred = checker.requestAvatarId(credentials)
             failure = self.getDeferredFailure(deferred)
 
-            self.assertFailureType(AuthentiationError, failure)
+            self.assertFailureType(AuthenticationError, failure)
         """
         self.runDeferred(
             deferred,
@@ -537,8 +538,8 @@ class TwistedTestCase(TestCase):
                 "No result expected on %r, found %r instead" % (
                     deferred, result[0]))
 
-    def getDeferredResult(self,
-            deferred, timeout=1, debug=False, prevent_stop=False):
+    def getDeferredResult(
+            self, deferred, timeout=1, debug=False, prevent_stop=False):
         """
         Run the deferred and return the result.
 
@@ -979,7 +980,8 @@ class ChevahTestCase(TwistedTestCase):
 
     def assertFailureID(self, failure_id, failure_or_deferred):
         """
-        Raise assertion error if failure does not have the required id.
+        Raise `AssertionError` if failure does not have the required id or
+        the specified id is not unicode.
         """
         if isinstance(failure_or_deferred, Failure):
             failure = failure_or_deferred
@@ -991,6 +993,9 @@ class ChevahTestCase(TwistedTestCase):
             actual_id = getattr(failure.value, 'id')
         except:
             actual_id = getattr(failure.value, 'event_id')
+
+        if not isinstance(actual_id, unicode):
+            raise AssertionError(u'Failure ID must be unicode.')
 
         if actual_id != failure_id:
             raise AssertionError(
@@ -1056,9 +1061,9 @@ class ChevahTestCase(TwistedTestCase):
                                 kind, str(kind_id), key, value,
                                 current_value))
             except KeyError:
-                raise AssertionError(
-                    u'%s %s, has no data "%s". Data is:\n%s' % (
-                            kind, str(kind_id), key, current_data))
+                values = (kind, str(kind_id), key, current_data)
+                message = u'%s %s, has no data "%s". Data is:\n%s' % values
+                raise AssertionError(message)
 
     def assertExceptionData(self, data, exception):
         """

@@ -28,7 +28,7 @@ BUILD_PACKAGES = [
     'docutils>=0.9.1-chevah2',
 
     # Buildbot is used for try scheduler
-    'buildbot',
+    'buildbot==0.8.8.c1',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -41,14 +41,13 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'pyflakes>=0.5.0-chevah2',
+    'pyflakes==0.7.3',
     'closure_linter==2.3.9',
-    'pocketlint==0.5.31-chevah7',
-    'pocketlint-jshint',
+    'pocketlint==1.4.4.c4',
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.1.2-chevah1',
+    'nose==1.3.0-c5',
     'mock',
 
     # Test SFTP service using a 3rd party client.
@@ -79,7 +78,7 @@ from brink.pavement_commons import (
     test_normal,
     test_super,
     )
-from paver.easy import consume_args, needs, task
+from paver.easy import call_task, consume_args, needs, task
 
 # Make pylint shut up.
 buildbot_list
@@ -105,6 +104,9 @@ SETUP['pocket-lint']['include_files'] = [
     'pavement.py',
     'release-notes.rst',
     ]
+SETUP['buildbot']['server'] = 'build.chevah.com'
+SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
+SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
 SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
@@ -179,12 +181,12 @@ def test_os_dependent(args):
 
 
 @task
-@needs('deps_build', 'lint')
-@consume_args
-def test_os_independent(args):
+@needs('deps_build')
+def test_os_independent():
     """
     Run os independent tests.
     """
+    call_task('lint', options={'all': True})
 
 
 @consume_args

@@ -8,6 +8,7 @@ import sys
 
 from twisted.internet import defer, reactor
 from twisted.internet.task import Clock
+from twisted.python.failure import Failure
 
 from chevah.empirical import conditionals, EmpiricalTestCase, mk
 
@@ -20,6 +21,22 @@ class Dummy(object):
 
     def method(self):
         return self._value
+
+
+class ErrorWithID(Exception):
+    """
+    An error that provides an id to help with testing.
+    """
+    def __init__(self, id):
+        super(ErrorWithID, self).__init__()
+        self._id = id
+
+    @property
+    def id(self):
+        """
+        Return error id.
+        """
+        return self._id
 
 
 class TestEmpiricalTestCase(EmpiricalTestCase):
@@ -307,9 +324,9 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         value = mk.string()
 
         with self.patch(
-                'chevah.empirical.tests.normal.test_testcase.Dummy.method',
-                return_value=value,
-            ):
+            'chevah.empirical.tests.normal.test_testcase.Dummy.method',
+            return_value=value,
+                ):
             instance = Dummy()
             self.assertEqual(value, instance.method())
 
@@ -431,6 +448,28 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         os.mkdir(mk.fs.getEncodedPath(folder_name))
 
         self.check_assertWorkingFolderIsClean([file_name, folder_name])
+
+    def test_assertFailureID_unicode_id(self):
+        """
+        Can be called with unicode failure id.
+        """
+        failure = Failure(ErrorWithID(u'100'))
+
+        self.assertFailureID(u'100', failure)
+
+    def test_assertFailureID_non_unicode_id(self):
+        """
+        It will raise an error if the failure id is not unicode.
+        """
+        failure = Failure(ErrorWithID(100))
+
+        with self.assertRaises(AssertionError):
+            self.assertFailureID(100, failure)
+
+        failure = Failure(ErrorWithID("100"))
+
+        with self.assertRaises(AssertionError):
+            self.assertFailureID("100", failure)
 
     @conditionals.onOSFamily('posiX')
     def test_onOSFamily_posix(self):
