@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.22.0 - 08/02/2014
+-------------------
+
+* Remove Twisted Web testing support.
+
+
 0.21.0 - 07/02/2014
 -------------------
 

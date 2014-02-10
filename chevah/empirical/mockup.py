@@ -3,7 +3,6 @@
 from __future__ import with_statement
 
 from select import error as SelectError
-from StringIO import StringIO
 from threading import Thread
 import BaseHTTPServer
 import errno
@@ -18,16 +17,10 @@ import uuid
 
 from OpenSSL import SSL, crypto
 
-from twisted.internet import address, defer, interfaces as internet_interfaces
+from twisted.internet import address, defer
 from twisted.internet.protocol import Factory
 from twisted.internet.tcp import Port
-from twisted.web import (
-    http,
-    http_headers,
-    server as web_server,
-    resource as web_resource,
-    )
-from zope.interface import implements
+
 
 from chevah.compat import DefaultAvatar, system_users
 from chevah.empirical.filesystem import LocalTestFilesystem
@@ -286,359 +279,6 @@ class MockHTTPResponse(object):
         self.content_type = content_type
 
 
-class DummyHTTPChannel(object):
-    port = 80
-    disconnected = False
-
-    def __init__(self, site=None, peer=None, host=None, resource=None):
-        self.written = StringIO()
-        self.producers = []
-        if peer is None:
-            peer = factory.makeIPv4Address(host='192.168.1.1', port=1234)
-
-        if host is None:
-            host = factory.makeIPv4Address(host='10.0.0.1', port=self.port)
-
-        if site is None:
-            site = factory.makeTwistedWebSite(resource=resource)
-
-        self.site = site
-        self._peer = peer
-        self._host = host
-
-    def getPeer(self):
-        return self._peer
-
-    def write(self, bytes):
-        assert isinstance(bytes, str)
-        self.written.write(bytes)
-
-    def writeSequence(self, iovec):
-        map(self.write, iovec)
-
-    def getHost(self):
-        return self._host
-
-    def registerProducer(self, producer, streaming):
-        self.producers.append((producer, streaming))
-
-    def loseConnection(self):
-        self.disconnected = True
-
-    def requestDone(self, request):
-        pass
-
-
-class DummyHTTPSChannel(object):
-
-    implements(internet_interfaces.ISSLTransport)
-    port = 443
-
-
-class DummyWebRequest(object):
-    """
-    A dummy Twisted Web Request used in tests.
-    """
-
-    def __init__(
-            self, postpath=None, prepath=None, session=None, resource=None,
-            data=None, peer=None, site=None, uri=None, clientproto=None,
-            method=None, secured=False, path=None, host=None):
-
-        channel = factory.makeTwistedWebHTTPChannel()
-
-        if site is None:
-            site = factory.makeTwistedWebSite(resource)
-        channel.site = site
-        self.site = site
-
-        # Data writen.
-        self.content = StringIO()
-        self.written = []
-
-        if data:
-            self.content.write(data)
-            self.content.seek(0)
-
-        # Full URL including arguments
-        if uri is None:
-            uri = '/uri-not-defined'
-        self.uri = uri
-
-        # HTTP URL arguments POST or GET
-        self.args = {}
-
-        # HTTP URL without arguments
-        self.path = path
-
-        if prepath is None:
-            prepath = self.uri.split('/')[:1]
-
-        if postpath is None:
-            postpath = []
-
-        if peer is None:
-            peer = factory.makeIPv4Address()
-
-        self.sitepath = []
-
-        self.prepath = prepath
-        self.postpath = postpath
-        self.client = peer
-
-        self.secured = secured
-
-        if clientproto is None:
-            clientproto = 'HTTP/1.0'
-        self.clientproto = clientproto
-
-        if method is None:
-            method = 'GET'
-        self.method = method.upper()
-
-        self.session = None
-        self.protoSession = session or web_server.Session(0, self)
-
-        self._code = None
-        self._message = None
-
-        self.responseHeaders = http_headers.Headers()
-        self.requestHeaders = http_headers.Headers()
-
-        # This should be called after we have defined the request headers.
-        if host is None:
-            host = 'dummy.host.tld'
-        self.setRequestHeader('host', host)
-
-        self.received_cookies = {}
-        self.cookies = []  # outgoing cookies
-
-        self._finishedDeferreds = []
-        self.finished = 0
-
-    def __repr__(self):
-        data = {
-            'uri': self.uri,
-            'code': self.code,
-            'response_content': self.test_response_content,
-            'response_headers': dict(self.responseHeaders.getAllRawHeaders()),
-            }
-        return (
-            'DummyWebRequest for "%(uri)s", code: %(code)s\n'
-            'response content: "%(response_content)s"\n'
-            'response headers: "%(response_headers)s' % data
-            )
-
-    @property
-    def code(self):
-        return self._code
-
-    @property
-    def message(self):
-        return self._message
-
-    @property
-    def test_response_content(self):
-        """
-        Return the data written to the request during tests.
-        """
-        return ''.join(self.written)
-
-    def getSession(self, sessionInterface=None):
-        if not self.session:
-
-            assert not self.written, (
-                "Session cannot be requested after data has been written.")
-
-            cookiename = string.join(['TWISTED_SESSION'] + self.sitepath, "_")
-            sessionCookie = self.getCookie(cookiename)
-            if sessionCookie:
-                try:
-                    self.session = self.site.getSession(sessionCookie)
-                except KeyError:
-                    pass
-            # if it still hasn't been set, fix it up.
-            if not self.session:
-                self.session = self.site.makeSession()
-                self.addCookie(cookiename, self.session.uid, path='/')
-        self.session.touch()
-        if sessionInterface:
-            return self.session.getComponent(sessionInterface)
-        return self.session
-
-    def write(self, data):
-        self.written.append(data)
-
-    def isSecure(self):
-        return self.secured
-
-    def getHeader(self, name):
-        """
-        Public method for a Request.
-        """
-        value = self.requestHeaders.getRawHeaders(name)
-        if value is not None:
-            return value[-1]
-
-    def setHeader(self, name, value):
-        """
-        Public method for a Request.
-        """
-        self.responseHeaders.setRawHeaders(name, [value])
-
-    def getRequestHeader(self, name):
-        """
-        Testing method to get request headers.
-
-        This is here so that we can have clear/explicit tests.
-        """
-        return self.getHeader(name)
-
-    def setRequestHeader(self, name, value):
-        """
-        Testing method to set request headers.
-
-        This is here so that we can have clear/explicit tests.
-        """
-        self.requestHeaders.setRawHeaders(name.lower(), [value])
-
-    def getResponseHeader(self, name):
-        """
-        Testing method to get response headers.
-
-        This is here so that we can have clear/explicit tests.
-        """
-        value = self.responseHeaders.getRawHeaders(name)
-        if value is not None:
-            return value[-1]
-
-    def setResponseHeader(self, name, value):
-        """
-        Testing method to set response headers.
-
-        This is here so that we can have clear/explicit tests.
-        """
-        self.setHeaser(self, name, value)
-
-    def setLastModified(self, when):
-        assert not self.written, (
-            "Last-Modified cannot be set after data has been written: %s." % (
-                "@@@@".join(self.written)))
-
-    def setETag(self, tag):
-        assert not self.written, (
-            "ETag cannot be set after data has been written: %s." % (
-                "@@@@".join(self.written)))
-
-    def getCookie(self, key):
-        return self.received_cookies.get(key)
-
-    def addCookie(
-            self, k, v, expires=None, domain=None, path=None, max_age=None,
-            comment=None, secure=None):
-        """
-        Set an outgoing HTTP cookie.
-
-        In general, you should consider using sessions instead of cookies, see
-        L{twisted.web.server.Request.getSession} and the
-        L{twisted.web.server.Session} class for details.
-        """
-        cookie = '%s=%s' % (k, v)
-        if expires is not None:
-            cookie = cookie + "; Expires=%s" % expires
-        if domain is not None:
-            cookie = cookie + "; Domain=%s" % domain
-        if path is not None:
-            cookie = cookie + "; Path=%s" % path
-            if max_age is not None:
-                cookie = cookie + "; Max-Age=%s" % max_age
-            if comment is not None:
-                cookie = cookie + "; Comment=%s" % comment
-            if secure:
-                cookie = cookie + "; Secure"
-            self.cookies.append(cookie)
-
-    def redirect(self, url):
-        """
-        Utility function that does a redirect.
-
-        The request should have finish() called after this.
-        """
-        self.setResponseCode(http.FOUND)
-        self.setHeader("location", url)
-
-    def registerProducer(self, prod, s):
-        self.go = 1
-        while self.go:
-            prod.resumeProducing()
-
-    def unregisterProducer(self):
-        self.go = 0
-
-    def processingFailed(self, reason):
-        """
-        Errback and L{Deferreds} waiting for finish notification.
-        """
-        if self._finishedDeferreds is not None:
-            observers = self._finishedDeferreds
-            self._finishedDeferreds = None
-            for obs in observers:
-                obs.errback(reason)
-
-    def setResponseCode(self, code, message=None):
-        """
-        Set the HTTP status response code, but takes care that this is called
-        before any data is written.
-        """
-        assert not self.written, (
-            "Response code cannot be set after data has been written: %s." % (
-                "@@@@".join(self.written)))
-        self._code = code
-        self._message = message
-
-    def render(self, resource):
-        """
-        Render the given resource as a response to this request.
-
-        This implementation only handles a few of the most common behaviors of
-        resources.  It can handle a render method that returns a string or
-        C{NOT_DONE_YET}.  It doesn't know anything about the semantics of
-        request methods (eg HEAD) nor how to set any particular headers.
-        Basically, it's largely broken, but sufficient for some tests at
-        least.
-        It should B{not} be expanded to do all the same stuff L{Request} does.
-        Instead, L{DummyRequest} should be phased out and L{Request} (or some
-        other real code factored in a different way) used.
-        """
-        result = resource.render(self)
-        if result is web_server.NOT_DONE_YET:
-            return
-        self.write(result)
-        self.finish()
-
-    def finish(self):
-        """
-        Record that the request is finished and callback and L{Deferred}s
-        waiting for notification of this.
-        """
-        self.finished = self.finished + 1
-        if self._finishedDeferreds is not None:
-            observers = self._finishedDeferreds
-            self._finishedDeferreds = None
-            for obs in observers:
-                obs.callback(None)
-
-    def notifyFinish(self):
-        """
-        Return a L{Deferred} which is called back with C{None} when the
-        request is finished.
-        This will probably only work if you haven't called C{finish} yet.
-        """
-        finished = defer.Deferred()
-        self._finishedDeferreds.append(finished)
-        return finished
-
-
 class TestSSLContextFactory(object):
     '''An SSLContextFactory used in tests.'''
 
@@ -817,32 +457,10 @@ class ChevahCommonsFactory(object):
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
 
-    def makeTwistedWebHTTPChannel(self, peer=None, host=None):
-        channel = DummyHTTPChannel(peer=peer, host=host)
-        return channel
-
-    def makeTwistedWebHTTPSChannel(self, peer=None, host=None):
-        channel = DummyHTTPSChannel(peer=peer, host=host)
-        return channel
-
-    def makeTwistedWebSite(self, resource=None):
-        if resource is None:
-            resource = web_resource.Resource()
-
-        site = web_server.Site(resource)
-        return site
-
-    def makeTwistedWebRequest(self, *args, **kwargs):
-        '''Create a Twisted Web Request.
-
-        This request can either be used directly on a resource or it can
-        be used on a site to get the resource for that request.
-        '''
-        request = DummyWebRequest(*args, **kwargs)
-        return request
-
-    def makeSSLContext(self, method=None, cipher_list=None,
-                       certificate_path=None, key_path=None):
+    def makeSSLContext(
+        self, method=None, cipher_list=None,
+        certificate_path=None, key_path=None,
+            ):
         '''Create an SSL context.'''
         if method is None:
             method = SSL.SSLv23_METHOD
@@ -862,8 +480,10 @@ class ChevahCommonsFactory(object):
 
         return ssl_context
 
-    def makeSSLContextFactory(self, method=None, cipher_list=None,
-                              certificate_path=None, key_path=None):
+    def makeSSLContextFactory(
+        self, method=None, cipher_list=None,
+        certificate_path=None, key_path=None,
+            ):
         '''Return an instance of SSLContextFactory.'''
         return TestSSLContextFactory(
             self, method=method, cipher_list=cipher_list,
