@@ -637,7 +637,6 @@ class ChevahTestCase(TwistedTestCase):
         self.test_segments = None
 
     def tearDown(self):
-
         self._checkTemporaryFiles()
 
         threads = threading.enumerate()
@@ -863,6 +862,26 @@ class ChevahTestCase(TwistedTestCase):
                     temp_filesystem.deleteFile(segments)
 
         return temp_members
+
+    @classmethod
+    def getPeakMemoryUsage(cls):
+        """
+        Return maximum memory usage in kilo bytes.
+        """
+        if cls.os_family == 'posix':
+            import resource
+            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        elif cls.os_family == 'nt':
+            from wmi import WMI
+            local_vmi = WMI('.')
+            result = local_vmi.query(
+                'SELECT WorkingSetPeak '
+                'FROM Win32_PerfRawData_PerfProc_Process '
+                'WHERE IDProcess=%d' % os.getpid()
+                )
+            return int(int(result[0].WorkingSetPeak) / 1024)
+        else:
+            raise AssertionError('OS not supported.')
 
     @classmethod
     def assertTempIsClean(cls):

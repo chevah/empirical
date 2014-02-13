@@ -2,6 +2,25 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.23.2 - 13/02/2014
+-------------------
+
+* Show peak memory in Windows as integer.
+
+
+0.23.1 - 13/02/2014
+-------------------
+
+* Fix getting memory usage on Windows.
+
+
+0.23.0 - 12/02/2014
+-------------------
+
+* Record maximum memory used at end of test run.
+* Add plugin to record memory usage for each test.
+
+
 0.22.0 - 08/02/2014
 -------------------
 

@@ -9,9 +9,11 @@ import sys
 
 from nose.core import main as nose_main
 
+from chevah.empirical.nose_memory_usage import MemoryUsage
 from chevah.empirical.nose_test_timer import TestTimer
 from chevah.empirical.nose_run_reporter import RunReporter
-from chevah.empirical.testcase import ChevahTestCase
+
+from chevah.empirical import EmpiricalTestCase
 
 if __name__ == '__main__':
     '''Execute the nose test runner.
@@ -26,8 +28,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     drop_user = sys.argv[1]
-    ChevahTestCase.initialize(drop_user=drop_user)
-    ChevahTestCase.dropPrivileges()
+    EmpiricalTestCase.initialize(drop_user=drop_user)
+    EmpiricalTestCase.dropPrivileges()
 
     new_argv = ['chevah-test-runner']
     new_argv.extend(sys.argv[2:])
@@ -35,11 +37,13 @@ if __name__ == '__main__':
     plugins = [
         TestTimer(),
         RunReporter(),
+        MemoryUsage(),
         ]
     try:
         nose_main(addplugins=plugins)
     except SystemExit, error:
         import threading
+        print "Max RSS: %s" % EmpiricalTestCase.getPeakMemoryUsage()
         threads = threading.enumerate()
         if len(threads) > 1:
             print "There are still active threads: %s" % threads

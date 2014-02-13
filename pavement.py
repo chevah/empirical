@@ -19,6 +19,8 @@ PYTHON_VERSION = '2.7'
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
     'chevah-compat==0.13.0',
+    # We install wmi everywhere even though it is only used on Windows.
+    'wmi==1.4.9',
     ]
 
 BUILD_PACKAGES = [

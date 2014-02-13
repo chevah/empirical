@@ -1,21 +1,19 @@
 from setuptools import Command, find_packages, setup
 import os
 
-VERSION = '0.22.0'
+VERSION = '0.23.2'
 
 
 class PublishCommand(Command):
     """
-    Publish the source distribution to local pypi cache and remote
-    Chevah PyPi server.
+    Publish the source distribution to remote Chevah PyPi server.
     """
 
-    description = "copy distributable to Chevah cache folder"
+    description = 'Publish package to Chevah PyPi server.'
     user_options = []
 
     def initialize_options(self):
         self.cwd = None
-        self.destination_base = '~/chevah/brink/cache/pypi/'
 
     def finalize_options(self):
         self.cwd = os.getcwd()
