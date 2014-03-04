@@ -10,6 +10,7 @@ from twisted.internet import defer, reactor
 from twisted.internet.task import Clock
 from twisted.python.failure import Failure
 
+from chevah.compat import process_capabilities
 from chevah.empirical import conditionals, EmpiricalTestCase, mk
 
 
@@ -496,6 +497,17 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
                 not sys.platform.startswith('aix')):
             raise AssertionError(
                 'This should be called only on Linux and AIX.')
+
+    @conditionals.onCapability('impersonate_local_account', True)
+    def test_onCapability(self):
+        """
+        Run test only when impersonate_local_account is True.
+        """
+        if process_capabilities.impersonate_local_account is not True:
+            raise AssertionError(
+                'This should be called only when impersonate_local_account '
+                'is True.'
+                )
 
 
 class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):

@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.25.0 - 04/03/2014
+-------------------
+
+* Add conditional based on process capabilities.
+
+
 0.24.1 - 03/03/2014
 -------------------
 

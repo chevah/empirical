@@ -42,3 +42,20 @@ def onOSName(name):
         return wrapper
 
     return inner
+
+
+def onCapability(name, value):
+    """
+    Run test only if capability with `name` equals `value`.
+    """
+    capability = getattr(process_capabilities, name)
+
+    def inner(method):
+        @wraps(method)
+        def wrapper(*args, **kwargs):
+            if capability != value:
+                raise SkipTest()
+            return method(*args, **kwargs)
+        return wrapper
+
+    return inner
