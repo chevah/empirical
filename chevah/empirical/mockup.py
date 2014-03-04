@@ -12,7 +12,6 @@ import os
 import random
 import string
 import threading
-import urllib
 import uuid
 
 from OpenSSL import SSL, crypto
@@ -499,13 +498,6 @@ class ChevahCommonsFactory(object):
         finally:
             cert_file.close()
         return certificate
-
-    def encodePathToURI(self, path):
-        """
-        Return the URI encoding pathname.
-        """
-        path = path.encode('utf-8')
-        return urllib.quote(path, '/')
 
     def makeDeferredSucceed(self, data=None):
         """

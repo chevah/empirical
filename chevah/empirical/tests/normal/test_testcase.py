@@ -521,3 +521,65 @@ class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
         Just a test to check that everything works ok with skipped tests.
         """
         raise AssertionError('Should not be called')
+
+
+class TestEmpiricalTestCaseAddCleanup(EmpiricalTestCase):
+    """
+    Test case for checking addCleanup.
+    """
+
+    def setUp(self):
+        super(TestEmpiricalTestCaseAddCleanup, self).setUp()
+        self.cleanup_call_count = 0
+
+    def tearDown(self):
+        self.assertEqual(0, self.cleanup_call_count)
+        super(TestEmpiricalTestCaseAddCleanup, self).tearDown()
+        self.assertEqual(1, self.cleanup_call_count)
+
+    def cleanUp(self):
+        self.cleanup_call_count += 1
+
+    def test_addCleanup(self):
+        """
+        Will be called at tearDown.
+        """
+        self.addCleanup(self.cleanUp)
+
+        self.assertEqual(0, self.cleanup_call_count)
+
+
+class TestEmpiricalTestCaseCallCleanup(EmpiricalTestCase):
+    """
+    Test case for checking callCleanup.
+    """
+
+    def setUp(self):
+        super(TestEmpiricalTestCaseCallCleanup, self).setUp()
+        self.cleanup_call_count = 0
+
+    def tearDown(self):
+        self.assertEqual(1, self.cleanup_call_count)
+        super(TestEmpiricalTestCaseCallCleanup, self).tearDown()
+        self.assertEqual(1, self.cleanup_call_count)
+
+    def cleanUp(self):
+        self.cleanup_call_count += 1
+
+    def test_callCleanup(self):
+        """
+        Will call registered cleanup methods and will not be called again at
+        tearDown or at any other time it is called.
+        """
+        self.addCleanup(self.cleanUp)
+
+        self.assertEqual(0, self.cleanup_call_count)
+
+        self.callCleanup()
+
+        # Check that callback is called.
+        self.assertEqual(1, self.cleanup_call_count)
+
+        # Calling again produce no changes.
+        self.callCleanup()
+        self.assertEqual(1, self.cleanup_call_count)

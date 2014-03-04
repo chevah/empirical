@@ -48,6 +48,13 @@ from chevah.empirical.constants import (
 from twisted.internet import reactor
 
 
+def _get_hostname():
+    """
+    Return hostname as resolved by default DNS resolver.
+    """
+    return socket.gethostname()
+
+
 class Contains(object):
     """
     Marker class used in tests when something needs to contain a value.
@@ -626,6 +633,10 @@ class ChevahTestCase(TwistedTestCase):
     os_name = process_capabilities.os_name
     os_family = process_capabilities.os_family
 
+    # We assume that hostname does not change during test and this
+    # should save a few DNS queries.
+    hostname = _get_hostname()
+
     Bunch = Bunch
     Contains = Contains
     Mock = Mock
@@ -634,11 +645,12 @@ class ChevahTestCase(TwistedTestCase):
 
     def setUp(self):
         super(ChevahTestCase, self).setUp()
+        self.__cleanup__ = []
         self.test_segments = None
 
     def tearDown(self):
+        self.callCleanup()
         self._checkTemporaryFiles()
-
         threads = threading.enumerate()
         if len(threads) > 1:
             # FIXME:1077:
@@ -660,6 +672,20 @@ class ChevahTestCase(TwistedTestCase):
                         thread_name, threads))
 
         super(ChevahTestCase, self).tearDown()
+
+    def addCleanup(self, function, *args, **kwargs):
+        """
+        Overwrite unit-test behaviour to run cleanup method before tearDown.
+        """
+        self.__cleanup__.append((function, args, kwargs))
+
+    def callCleanup(self):
+        """
+        Call all cleanup methods.
+        """
+        for function, args, kwargs in self.__cleanup__:
+            function(*args, **kwargs)
+        self.__cleanup__ = []
 
     def _checkTemporaryFiles(self):
         """
@@ -713,7 +739,7 @@ class ChevahTestCase(TwistedTestCase):
         """
         Return the hostname of the current system.
         """
-        return socket.gethostname()
+        return _get_hostname()
 
     @classmethod
     def initialize(cls, drop_user):

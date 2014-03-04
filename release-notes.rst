@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.24.1 - 03/03/2014
+-------------------
+
+* Add cached hostname to EmpricalTestCase.
+
+
+0.24.0 - 03/03/2014
+-------------------
+
+* Add support to call registered cleanup methods before tearDown.
+
+
 0.23.2 - 13/02/2014
 -------------------
 
