@@ -509,6 +509,36 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
                 'is True.'
                 )
 
+    def test_cleanup_test_segments_file(self):
+        """
+        When self.test_segments is defined it will be automatically
+        removed.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+
+    def test_cleanup_test_segments_folder(self):
+        """
+        When self.test_segments is defined it will be automatically
+        removed, even when is a folder with content.
+        """
+        self.test_segments = mk.fs.createFolderInTemp()
+        child_segments = self.test_segments[:]
+        child_segments.append(mk.makeFilename())
+        mk.fs.createFolder(child_segments)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_cleanup_test_segments_link(self):
+        """
+        When self.test_segments is defined it will be automatically
+        removed, even when it is a symbolic link.
+        """
+        _, self.test_segments = mk.fs.makePathInTemp()
+
+        mk.fs.makeLink(
+            target_segments=mk.fs.temp_segments,
+            link_segments=self.test_segments,
+            )
+
 
 class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
     """

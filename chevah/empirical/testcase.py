@@ -697,7 +697,7 @@ class ChevahTestCase(TwistedTestCase):
             if factory.fs.isFolder(self.test_segments):
                 factory.fs.deleteFolder(
                     self.test_segments, recursive=True)
-            if factory.fs.isFile(self.test_segments):
+            else:
                 factory.fs.deleteFile(self.test_segments)
 
         checks = [

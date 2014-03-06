@@ -18,7 +18,7 @@ PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
-    'chevah-compat==0.13.0',
+    'chevah-compat==0.16.0',
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
     ]
@@ -128,14 +128,16 @@ def deps_testing():
     """
     Install dependencies for testing.
     """
-    print('Installing dependencies to %s...' % (pave.path.build))
+    print('Installing testing dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
         arguments=RUN_PACKAGES,
+        silent=True,
         )
     pave.pip(
         command='install',
         arguments=TEST_PACKAGES,
+        silent=True,
         )
 
 
@@ -145,10 +147,11 @@ def deps_build():
     """
     Install dependencies for build environment.
     """
-    print('Installing dependencies to %s...' % (pave.path.build))
+    print('Installing build dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
         arguments=BUILD_PACKAGES,
+        silent=True,
         )
 
 

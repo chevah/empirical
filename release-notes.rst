@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.25.1 - 04/03/2014
+-------------------
+
+* Fix cleanup of test_segments when they are not a directory and not a file,
+  for example a link.
+
+
 0.25.0 - 04/03/2014
 -------------------
 
