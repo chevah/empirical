@@ -21,7 +21,7 @@ from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
 from twisted.python.failure import Failure
 
 # For Python below 2.7 we use the separate unittest2 module.
-# It comes by default in Pthon 2.7.
+# It comes by default in Python 2.7.
 if sys.version_info[0:2] < (2, 7):
     from unittest2 import TestCase
     # Shut up you linter.
@@ -1049,7 +1049,7 @@ class ChevahTestCase(TwistedTestCase):
 
     def assertFailureData(self, data, failure_or_deferred):
         """
-        Raise assertion error if failure does not contain the required data.
+        Raise AssertionError if failure does not contain the required data.
         """
         if isinstance(failure_or_deferred, Failure):
             failure = failure_or_deferred
@@ -1069,20 +1069,6 @@ class ChevahTestCase(TwistedTestCase):
             expected_data=data,
             current_data=failure_data,
             )
-
-    def assertExceptionID(self, exception_id, exception):
-        """
-        Raise assertion error if exception does not have the required id.
-        """
-        try:
-            actual_id = getattr(exception, 'id')
-        except:
-            actual_id = getattr(exception, 'event_id')
-
-        if actual_id != exception_id:
-            raise AssertionError(
-                u'Exception id for %s is not %s, but %s' % (
-                    exception, str(exception_id), str(actual_id)))
 
     def _checkData(self, kind, kind_id, expected_data, current_data):
         """
@@ -1110,40 +1096,24 @@ class ChevahTestCase(TwistedTestCase):
                 message = u'%s %s, has no data "%s". Data is:\n%s' % values
                 raise AssertionError(message)
 
-    def assertExceptionData(self, data, exception):
-        """
-        Raise assertion error if exception does not contain the required data.
-        """
-        try:
-            actual_id = getattr(exception, 'id')
-        except:
-            actual_id = getattr(exception, 'event_id')
-
-        self._checkData(
-            kind=u'Exception',
-            kind_id=actual_id,
-            expected_data=data,
-            current_data=exception.data,
-            )
-
     def assertIsEmpty(self, target):
         """
-        Raise AsertionError if target is not empty.
+        Raise AssertionError if target is not empty.
         """
         if len(target) != 0:
             raise AssertionError(u'Value is not empty.\n%s.' % (target))
 
     def assertIsNotEmpty(self, target):
         """
-        Raise AsertionError if target is empty.
+        Raise AssertionError if target is empty.
         """
         if len(target) == 0:
             raise AssertionError(u'Value is empty.\n%s.' % (target))
 
     def assertIn(self, target, source):
-        '''
-        Raise AsertionError if source is not in target.
-        '''
+        """
+        Raise AssertionError if source is not in target.
+        """
         if not source in target:
             raise AssertionError(u'"%s" not in "%s".' % (source, target))
 

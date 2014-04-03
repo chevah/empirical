@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.26.0 - 03/04/2014
+-------------------
+
+* Remove assertExceptionID and assertExceptionData functions from
+  EmpiricalTestCase.
+
+
 0.25.1 - 04/03/2014
 -------------------
 
@@ -18,7 +25,7 @@ Release notes for chevah.empirical
 0.24.1 - 03/03/2014
 -------------------
 
-* Add cached hostname to EmpricalTestCase.
+* Add cached hostname to EmpiricalTestCase.
 
 
 0.24.0 - 03/03/2014

@@ -11,11 +11,6 @@ if os.name == 'nt':
     import tempfile
     tempfile.tempdir = "c:\\temp"
 
-# Marker for paver.sh.
-# This value is paver by bash. Use a strict format.
-BRINK_VERSION = '0.32.0'
-PYTHON_VERSION = '2.7'
-
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
     'chevah-compat==0.16.0',
@@ -78,6 +73,7 @@ from brink.pavement_commons import (
     test_python,
     test_remote,
     test_normal,
+    test_review,
     test_super,
     )
 from paver.easy import call_task, consume_args, needs, task
@@ -96,6 +92,7 @@ pqm
 test_python
 test_remote
 test_normal
+test_review
 test_super
 
 SETUP['product']['name'] = 'chevah-empirical'
@@ -156,14 +153,14 @@ def deps_build():
 
 
 @task
-def build():
+def build(platform=None, python_version=None):
     """
     Copy new source code to build folder.
     """
     # Clean previous files.
     install_folder = [
         pave.path.build,
-        pave.getPythonLibPath(python_version=PYTHON_VERSION),
+        pave.getPythonLibPath(python_version=python_version),
         'chevah',
         'empirical',
         ]
@@ -200,3 +197,24 @@ def test(args):
     """
     Run all python tests.
     """
+
+
+@task
+# It needs consume_args to initialize the paver environment.
+@consume_args
+def test_ci(args):
+    """
+    Run tests in continuous integration environment.
+    """
+    env = os.environ.copy()
+    args = env.get('TEST_ARGUMENTS', '')
+    if not args:
+        args = []
+    else:
+        args = [args]
+    test_type = env.get('TEST_TYPE', 'normal')
+
+    if test_type == 'os-independent':
+        return call_task('test_os_independent')
+
+    return call_task('test_os_dependent', args=args)
