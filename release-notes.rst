@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.26.2 - 11/04/2014
+-------------------
+
+* Fix OLE/WMI error for missing WMI source on Windows 7 64bit. Use UTF-8
+  encoded WMI query string.
+
+
 0.26.0 - 03/04/2014
 -------------------
 

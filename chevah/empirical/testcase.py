@@ -899,13 +899,17 @@ class ChevahTestCase(TwistedTestCase):
             return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         elif cls.os_family == 'nt':
             from wmi import WMI
-            local_vmi = WMI('.')
-            result = local_vmi.query(
-                'SELECT WorkingSetPeak '
-                'FROM Win32_PerfRawData_PerfProc_Process '
-                'WHERE IDProcess=%d' % os.getpid()
-                )
-            return int(int(result[0].WorkingSetPeak) / 1024)
+            local_wmi = WMI('.')
+
+            query = (
+                u'SELECT PeakWorkingSetSize '
+                u'FROM Win32_Process '
+                u'WHERE Handle=%d' % os.getpid())
+            result = local_wmi.query(query.encode('utf-8'))
+            peak_working_set_size = int(result[0].PeakWorkingSetSize)
+            # FIXME:2099:
+            # Windows XP reports value in bytes, instead of Kilobytes.
+            return int(peak_working_set_size)
         else:
             raise AssertionError('OS not supported.')
 
@@ -945,7 +949,7 @@ class ChevahTestCase(TwistedTestCase):
 
     def assertIsInstance(self, expected_type, value, msg=None):
         """
-        Raise an expection if `value` is not an instance of `expected_type`
+        Raise an exception if `value` is not an instance of `expected_type`
         """
         # In Python 2.7 isInstance is already defined, but with swapped
         # arguments.
