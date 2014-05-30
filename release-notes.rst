@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.26.4 - 29/05/2014
+-------------------
+
+* Force Unicode error message in assertFailureType.
+
+
+0.26.3 - 29/05/2014
+-------------------
+
+* Fix error message encoding for assertions.
+
+
 0.26.2 - 11/04/2014
 -------------------
 

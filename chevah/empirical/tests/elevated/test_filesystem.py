@@ -8,7 +8,7 @@ from chevah.compat import (
     )
 
 from chevah.compat.testing import (
-    manufacture as compat_mk,
+    mk as compat_mk,
     TEST_ACCOUNT_USERNAME,
     TEST_ACCOUNT_PASSWORD,
     )
