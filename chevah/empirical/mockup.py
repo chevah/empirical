@@ -21,7 +21,7 @@ from twisted.internet.protocol import Factory
 from twisted.internet.tcp import Port
 
 
-from chevah.compat import DefaultAvatar, system_users
+from chevah.compat import DefaultAvatar
 from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.empirical.constants import (
     TEST_NAME_MARKER,
@@ -397,26 +397,6 @@ class ChevahCommonsFactory(object):
         """
         self.__class__._unique_id += 1
         return self.__class__._unique_id
-
-    def makeToken(self, credentials):
-        """
-        Generate the Windows token for credentials.
-
-        Only useful on Windows.
-        On Unix it should return None.
-        """
-        if os.name != 'nt':
-            return None
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=credentials.username,
-            password=credentials.password,
-            )
-        if not result:
-            raise AssertionError(
-                u'Failed to get a valid token for "%s" with "%s".' % (
-                    credentials.username, credentials.password))
-        return token
 
     def makeLocalTestFilesystem(self, avatar=None):
         if avatar is None:

@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.27.0 - 04/07/2014
+-------------------
+
+* Update for Solaris and latest chevah.compat.
+
+
 0.26.4 - 29/05/2014
 -------------------
 

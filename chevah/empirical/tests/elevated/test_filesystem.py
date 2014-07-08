@@ -9,8 +9,6 @@ from chevah.compat import (
 
 from chevah.compat.testing import (
     mk as compat_mk,
-    TEST_ACCOUNT_USERNAME,
-    TEST_ACCOUNT_PASSWORD,
     )
 from chevah.empirical import EmpiricalTestCase, mk, conditionals
 from chevah.empirical.filesystem import LocalTestFilesystem
@@ -24,16 +22,13 @@ class TestElevatedLocalTestFilesystem(EmpiricalTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestElevatedLocalTestFilesystem, cls).setUpClass()
-
-        user = TEST_ACCOUNT_USERNAME
-        password = TEST_ACCOUNT_PASSWORD
-        token = compat_mk.makeToken(username=user, password=password)
+        cls.user = compat_mk.getTestUser('normal')
         home_folder_path = system_users.getHomeFolder(
-            username=user, token=token)
+            username=cls.user.name, token=cls.user.token)
         cls.avatar = compat_mk.makeFilesystemOSAvatar(
-            name=user,
+            name=cls.user.name,
             home_folder_path=home_folder_path,
-            token=token,
+            token=cls.user.token,
             )
 
     def checkTemporaryFolderInitialization(self, filesystem):
@@ -46,7 +41,7 @@ class TestElevatedLocalTestFilesystem(EmpiricalTestCase):
             filesystem.setUpTemporaryFolder()
             owner = filesystem.getOwner(filesystem.temp_segments)
 
-            self.assertEqual(TEST_ACCOUNT_USERNAME, owner)
+            self.assertEqual(self.user.name, owner)
         finally:
             filesystem.tearDownTemporaryFolder()
 

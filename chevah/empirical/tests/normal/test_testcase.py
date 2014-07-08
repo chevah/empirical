@@ -387,7 +387,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
 
         This is a system test, but socket operations are light.
         """
-        if sys.platform.startswith('aix'):
+        if self.os_name in ['aix', 'solaris']:
             # On AIX and probably on other Unixes we can only bind on
             # existing fixed IP addressed like 127.0.0.1.
             raise self.skipTest()
