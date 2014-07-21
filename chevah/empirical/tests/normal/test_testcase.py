@@ -539,6 +539,21 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
             link_segments=self.test_segments,
             )
 
+    def test_executeReactor_delayedCalls_chained(self):
+        """
+        It will wait for all delayed calls to execute, included delayed
+        which are later created by another delayed call.
+        """
+        self.called = False
+
+        def last_call():
+            self.called = True
+        reactor.callLater(0.01, lambda: reactor.callLater(0.01, last_call))
+
+        self.executeReactor()
+
+        self.assertTrue(self.called)
+
 
 class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
     """

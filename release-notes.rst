@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.28.0 - 21/07/2014
+-------------------
+
+* Fix a bug in executeReactor in which it does not wait for delayed calls.
+
+
 0.27.0 - 04/07/2014
 -------------------
 

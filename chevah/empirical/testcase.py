@@ -366,8 +366,14 @@ class TwistedTestCase(TestCase):
                     if excepted_callback in delayed_str:
                         is_exception = True
                 if not is_exception:
+                    # No need to look for other delayed calls.
                     have_callbacks = True
-                    continue
+                    break
+
+            # No need to look for other things as we already know that we need
+            # to wait at least for delayed calls.
+            if have_callbacks:
+                continue
 
             if run_once:
                 if have_callbacks:
