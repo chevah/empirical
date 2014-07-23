@@ -5,8 +5,9 @@ Tests for ChevahTestCase.
 """
 import os
 import sys
+import time
 
-from twisted.internet import defer, reactor
+from twisted.internet import defer, reactor, threads
 from twisted.internet.task import Clock
 from twisted.python.failure import Failure
 
@@ -553,6 +554,21 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         self.executeReactor()
 
         self.assertTrue(self.called)
+
+    def test_executeReactor_threadpool(self):
+        """
+        It will wait for all workers from threadpool.
+        """
+        self.called = False
+
+        def last_call():
+            time.sleep(0.1)
+            self.called = True
+
+        deferred = threads.deferToThread(last_call)
+
+        self.executeReactor()
+        self.assertTrue(deferred.called)
 
 
 class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):

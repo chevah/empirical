@@ -123,6 +123,36 @@ class TwistedTestCase(TestCase):
             result.append(str(delayed.func))
         return '\n'.join(result)
 
+    def _threadPoolQueueSize(self):
+        """
+        Return current size of thread Pool, or None when treadpool does not
+        exists.
+        """
+        if not reactor.threadpool:
+            return None
+        else:
+            return reactor.threadpool.q.qsize()
+
+    def _threadPoolThreads(self):
+        """
+        Return current threads from pool, or None when treadpool does not
+        exists.
+        """
+        if not reactor.threadpool:
+            return None
+        else:
+            return reactor.threadpool.threads
+
+    def _threadPoolWorking(self):
+        """
+        Return working thread from pool, or None when treadpool does not
+        exists.
+        """
+        if not reactor.threadpool:
+            return None
+        else:
+            return reactor.threadpool.working
+
     @classmethod
     def cleanReactor(cls):
         """
@@ -176,24 +206,32 @@ class TwistedTestCase(TestCase):
         """
         reactor.runUntilCurrent()
         if debug:
-            '''When debug is enabled with iterate using 1 second steps,
-            to have a much better debug output.
-            Otherwise the debug messages will flood the output.'''
+            # When debug is enabled with iterate using a small delay in steps,
+            # to have a much better debug output.
+            # Otherwise the debug messages will flood the output.
             print (
                 u'delayed: %s\n'
                 u'threads: %s\n'
-                u'writers: %s\nreaders:%s\n\n' % (
+                u'writers: %s\n'
+                u'readers: %s\n'
+                u'threadpool size: %s\n'
+                u'threadpool threads: %s\n'
+                u'threadpool working: %s\n'
+                u'\n' % (
                     self._reactorQueueToString(),
                     reactor.threadCallQueue,
                     reactor.getWriters(),
                     reactor.getReaders(),
+                    self._threadPoolQueueSize(),
+                    self._threadPoolThreads(),
+                    self._threadPoolWorking(),
                     )
                 )
             t2 = reactor.timeout()
             # For testing we want to force to reactor to wake at an
             # interval of at most 1 second.
             if t2 is None or t2 > 1:
-                t2 = 1
+                t2 = 0.1
             t = reactor.running and t2
             reactor.doIteration(t)
         else:
@@ -243,7 +281,16 @@ class TwistedTestCase(TestCase):
 
         # Look at threads queue.
         if len(reactor.threadCallQueue) > 0:
-            raise_failure('threads', str(reactor.threadCallQueue))
+            raise_failure('threads', reactor.threadCallQueue)
+
+        if self._threadPoolQueueSize() > 0:
+            raise_failure('threadpoool queue', self._threadPoolQueueSize())
+
+        if self._threadPoolWorking() > 0:
+            raise_failure('threadpoool working', self._threadPoolWorking())
+
+        if self._threadPoolThreads() > 0:
+            raise_failure('threadpoool threads', self._threadPoolThreads())
 
         if len(reactor.getWriters()) > 0:
             raise_failure('writers', str(reactor.getWriters()))
@@ -355,6 +402,16 @@ class TwistedTestCase(TestCase):
 
             have_callbacks = False
 
+            # Check for active jobs in thread pool.
+            if reactor.threadpool:
+                if (
+                        reactor.threadpool.working or
+                        (reactor.threadpool.q.qsize() > 0)
+                        ):
+                    time.sleep(0.01)
+                    have_callbacks = True
+                    continue
+
             # Look at delayed calls.
             for delayed in reactor.getDelayedCalls():
                 # We skip our own timeout call.
@@ -395,6 +452,9 @@ class TwistedTestCase(TestCase):
                         break
                 if have_callbacks:
                     break
+
+            if have_callbacks:
+                continue
 
             # Look at threads queue.
             if len(reactor.threadCallQueue) > 0:

@@ -2,6 +2,20 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.28.2 - 23/07/2014
+-------------------
+
+* When threads are found in reactor, add a small wait to allow the thread to
+  execute.
+
+
+0.28.1 - 22/07/2014
+-------------------
+
+* Fix a bug in executeReactor in which it does not wait for thread from
+  thread pool.
+
+
 0.28.0 - 21/07/2014
 -------------------
 
