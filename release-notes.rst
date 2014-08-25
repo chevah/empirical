@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.28.3 - 22/08/2014
+-------------------
+
+* When show strings in assertion error use repr() to also see non
+  printable characters.
+
+
 0.28.2 - 23/07/2014
 -------------------
 

@@ -1145,10 +1145,16 @@ class ChevahTestCase(TwistedTestCase):
                     if value != current_value:
                         message = (
                             u'%s %s, for data "%s" is not "%s", but "%s"') % (
-                            kind, str(kind_id), key, value, current_value)
+                            kind,
+                            str(kind_id),
+                            key,
+                            repr(value),
+                            repr(current_value),
+                            )
                         raise AssertionError(message.encode('utf-8'))
             except KeyError:
-                values = (kind, str(kind_id), key, current_data)
+                values = (
+                    kind, str(kind_id), repr(key), repr(current_data))
                 message = u'%s %s, has no data "%s". Data is:\n%s' % values
                 raise AssertionError(message.encode('utf-8'))
 
@@ -1172,7 +1178,7 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if source is not in target.
         """
         if not source in target:
-            message = u'"%s" not in "%s".' % (source, target)
+            message = u'%s not in %s.' % (repr(source), repr(target))
             raise AssertionError(message.encode('utf-8'))
 
     def assertContains(self, token, source):
@@ -1180,7 +1186,8 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if source does not contain `token`.
         '''
         if not token in source:
-            message = u'"%s" does not contains "%s".' % (source, token)
+            message = u'%s does not contains %s.' % (
+                repr(source), repr(token))
             raise AssertionError(message.encode('utf-8'))
 
     def assertNotContains(self, token, source):
@@ -1188,7 +1195,7 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if source does contain `token`.
         '''
         if token in source:
-            message = u'"%s" contains "%s".' % (source, token)
+            message = u'%s contains %s.' % (repr(source), repr(token))
             raise AssertionError(message.encode('utf-8'))
 
     def assertTextContains(self, pattern, source):
@@ -1196,7 +1203,8 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if pattern is not found in source.
         """
         if not pattern in pattern:
-            message = u'"%s" not contained in\n%s.' % (pattern, source)
+            message = u'%s not contained in\n%s.' % (
+                repr(pattern), repr(source))
             raise AssertionError(message.encode('utf-8'))
 
     def assertStartsWith(self, start, source):
@@ -1204,7 +1212,8 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if `source` does not starts with `start`.
         """
         if not source.startswith(start):
-            message = u'"%s" does not starts with "%s"' % (source, start)
+            message = u'%s does not starts with %s' % (
+                repr(source), repr(start))
             raise AssertionError(message.encode('utf-8'))
 
     def assertEndsWith(self, end, source):
@@ -1212,7 +1221,7 @@ class ChevahTestCase(TwistedTestCase):
         Raise AssertionError if `source` does not ends with `end`.
         """
         if not source.endswith(end):
-            message = u'"%s" does not end with "%s"' % (source, end)
+            message = u'%s does not end with %s' % (repr(source), repr(end))
             raise AssertionError(message.encode('utf-8'))
 
     def assertProvides(self, interface, obj):
