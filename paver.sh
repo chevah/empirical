@@ -403,8 +403,11 @@ detect_os() {
                     '12.04' | '12.10' | '13.04' | '13.10')
                         OS='ubuntu1204'
                     ;;
+                    '14.04' | '14.10' | '15.04' | '15.10')
+                        OS='ubuntu1404'
+                    ;;
                     *)
-                        echo 'Unsuported Ubuntu version.'
+                        echo 'Unsupported Ubuntu version.'
                         exit 1
                     ;;
                 esac

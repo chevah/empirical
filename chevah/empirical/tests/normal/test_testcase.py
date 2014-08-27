@@ -568,6 +568,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         deferred = threads.deferToThread(last_call)
 
         self.executeReactor()
+        self.assertTrue(self.called)
         self.assertTrue(deferred.called)
 
 

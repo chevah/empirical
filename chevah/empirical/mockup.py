@@ -300,14 +300,25 @@ class TestSSLContextFactory(object):
         return self._context
 
 
+# Singleton member used to generate unique integers across whole tests.
+# It starts with a different value to have different values between same
+# test runs.
+_unique_id = random.randint(0, 5000)
+
+
 class ChevahCommonsFactory(object):
-    '''This class creates objects from chevah.utils module.
+    """
+    Generator of objects to help testing.
+    """
 
-    It is designed to help with the tests and creating 'mock' objects.
-    '''
-
-    # Class member used for generating unique integers.
-    _unique_id = random.randint(0, 5000)
+    @classmethod
+    def getUniqueInteger(cls):
+        """
+        An integer unique for this session.
+        """
+        global _unique_id
+        _unique_id += 1
+        return _unique_id
 
     def ascii(self):
         """
@@ -390,13 +401,6 @@ class ChevahCommonsFactory(object):
                     )
 
         return base + extra_text + TEST_NAME_MARKER
-
-    def getUniqueInteger(self):
-        """
-        An integer unique for this session.
-        """
-        self.__class__._unique_id += 1
-        return self.__class__._unique_id
 
     def makeLocalTestFilesystem(self, avatar=None):
         if avatar is None:

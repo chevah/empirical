@@ -8,6 +8,7 @@ from __future__ import with_statement
 from urllib2 import urlopen
 
 from chevah.empirical.mockup import (
+    ChevahCommonsFactory,
     MockHTTPResponse,
     MockHTTPServer,
     )
@@ -71,3 +72,25 @@ class TestFactory(EmpiricalTestCase):
             mk.ascii(),
             )
         self.assertIsInstance(str, mk.ascii())
+
+    class OneFactory(ChevahCommonsFactory):
+        """
+        Minimal class to help with testing
+        """
+
+    class OtherFactory(ChevahCommonsFactory):
+        """
+        Minimal class to help with testing
+        """
+
+    def test_getUniqueInteger(self):
+        """
+        Integer is unique between various classes implementing the factory.
+        """
+        one = self.OneFactory()
+        other = self.OtherFactory()
+
+        self.assertNotEqual(
+            one.getUniqueInteger(),
+            other.getUniqueInteger(),
+            )

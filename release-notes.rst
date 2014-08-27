@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.28.4 - 27/08/2014
+-------------------
+
+* Make unique ID a singleton to make sure all code use the same ID.
+
+
 0.28.3 - 22/08/2014
 -------------------
 
