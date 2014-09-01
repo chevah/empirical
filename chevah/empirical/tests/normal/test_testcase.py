@@ -473,6 +473,19 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         with self.assertRaises(AssertionError):
             self.assertFailureID("100", failure)
 
+    @conditionals.skipOnCondition(lambda: False, 'Should not be skipped!!!')
+    def test_skipOnCondition_call(self):
+        """
+        Run test when callback return False.
+        """
+
+    @conditionals.skipOnCondition(lambda: True, 'As expected.')
+    def test_skipOnCondition_skip(self):
+        """
+        Skip test when callback return True.
+        """
+        raise AssertionError('Should not be called.')
+
     @conditionals.onOSFamily('posiX')
     def test_onOSFamily_posix(self):
         """
@@ -480,6 +493,14 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         """
         if os.name != 'posix':
             raise AssertionError('This should be called only on posix.')
+
+    @conditionals.onOSFamily('Nt')
+    def test_onOSFamily_nt(self):
+        """
+        Run test only on NT. This is the complement of previous test.
+        """
+        if os.name != 'nt':
+            raise AssertionError('This should be called only on NT.')
 
     @conditionals.onOSName('linuX')
     def test_onOSName_linux(self):
@@ -570,6 +591,32 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         self.executeReactor()
         self.assertTrue(self.called)
         self.assertTrue(deferred.called)
+
+
+@conditionals.onOSFamily('posiX')
+class TestClassConditionalsPosix(EmpiricalTestCase):
+    """
+    Conditionals also work on classes.
+    """
+    def test_onOSFamily_posix(self):
+        """
+        Run test only on posix.
+        """
+        if os.name != 'posix':
+            raise AssertionError('This should be called only on posix.')
+
+
+@conditionals.onOSFamily('nt')
+class TestClassConditionalsNT(EmpiricalTestCase):
+    """
+    This is the complement of the previous tests.
+    """
+    def test_onOSFamily(self):
+        """
+        Run test only on nt.
+        """
+        if os.name != 'nt':
+            raise AssertionError('This should be called only on nt.')
 
 
 class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):

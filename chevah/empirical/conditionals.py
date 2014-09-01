@@ -5,23 +5,51 @@ Decorators used for testing.
 """
 from nose import SkipTest
 from functools import wraps
+from unittest import TestCase
 
 from chevah.compat import process_capabilities
+
+
+def skipOnCondition(callback, message):
+    """
+    Helper to decorate skip class or methods based on callback results.
+
+    This case is inspired by Python unittest implementation.
+    """
+    def inner(test_item):
+        if not (
+            isinstance(test_item, type) and
+            issubclass(test_item, TestCase)
+                ):
+            # Only raise SkipTest in methods.
+            @wraps(test_item)
+            def wrapper(*args, **kwargs):
+                if callback():
+                    raise SkipTest(message)
+                return test_item(*args, **kwargs)
+
+            result = wrapper
+        else:
+            result = test_item
+
+        if callback():
+            result.__unittest_skip__ = True
+            result.__unittest_skip_why__ = message
+
+        return result
+
+    return inner
 
 
 def onOSFamily(family):
     """
     Run test only if current os is from `family`.
     """
-    def inner(method):
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            if process_capabilities.os_family != family.lower():
-                raise SkipTest()
-            return method(*args, **kwargs)
-        return wrapper
+    def check_os_family():
+        return process_capabilities.os_family != family.lower()
 
-    return inner
+    return skipOnCondition(
+        check_os_family, 'OS family "%s" not available.' % family)
 
 
 def onOSName(name):
@@ -33,15 +61,11 @@ def onOSName(name):
     else:
         name = [item.lower() for item in name]
 
-    def inner(method):
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            if process_capabilities.os_name not in name:
-                raise SkipTest()
-            return method(*args, **kwargs)
-        return wrapper
+    def check_os_name():
+        return process_capabilities.os_name not in name
 
-    return inner
+    return skipOnCondition(
+        check_os_name, 'OS name "%s" not available.' % name)
 
 
 def onCapability(name, value):
@@ -50,12 +74,8 @@ def onCapability(name, value):
     """
     capability = getattr(process_capabilities, name)
 
-    def inner(method):
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            if capability != value:
-                raise SkipTest()
-            return method(*args, **kwargs)
-        return wrapper
+    def check_capability():
+        return capability != value
 
-    return inner
+    return skipOnCondition(
+        check_capability, 'Capability "%s" not present.' % name)

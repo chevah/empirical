@@ -2,6 +2,19 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.29.1 - 01/09/2014
+-------------------
+
+* Add skip message for skipped methods.
+
+
+0.29.0 - 29/08/2014
+-------------------
+
+* Add support to call conditionals on classes.
+* Add a generic skipOnCondition conditional.
+
+
 0.28.4 - 27/08/2014
 -------------------
 
