@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.30.1 - 04/10/2014
+-------------------
+
+* Fix socket error exception for OS X.
+
+
+0.30.0 - 04/10/2014
+-------------------
+
+* Update support for OS X.
+
+
 0.29.1 - 01/09/2014
 -------------------
 

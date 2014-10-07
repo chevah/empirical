@@ -13,7 +13,7 @@ if os.name == 'nt':
 
 RUN_PACKAGES = [
     'twisted==12.1.0-chevah3',
-    'chevah-compat==0.22.0',
+    'chevah-compat==0.24.0',
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
     ]

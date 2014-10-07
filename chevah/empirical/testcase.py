@@ -869,7 +869,10 @@ class ChevahTestCase(TwistedTestCase):
             if self.os_name == 'solaris' and error.args[0] == 134:
                 pass
             elif self.os_name == 'aix' and error.args[0] == 76:
-                # On AIX socket is closed with an Not connected error.
+                # Socket is closed with an Not connected error.
+                pass
+            elif self.os_name == 'osx' and error.args[0] == 57:
+                # Socket is closed with an Not connected error.
                 pass
             elif self.os_name == 'windows' and error.args[0] == 10057:
                 # On Windows the error is:
