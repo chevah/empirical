@@ -6,6 +6,7 @@ TestCase used for Chevah project.
 """
 from contextlib import contextmanager
 from StringIO import StringIO
+import collections
 import inspect
 import threading
 import os
@@ -1165,6 +1166,17 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise AssertionError if target is not empty.
         """
+        if isinstance(target, collections.Iterable):
+            iterator = iter(target)
+            try:
+                iterator.next()
+            except StopIteration:
+                pass
+            else:
+                message = u'Iterable is not empty.\n%s.' % target
+                raise AssertionError(message.encode('utf-8'))
+            return
+
         if len(target) != 0:
             message = u'Value is not empty.\n%s.' % (target)
             raise AssertionError(message.encode('utf-8'))
@@ -1173,6 +1185,16 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise AssertionError if target is empty.
         """
+        if isinstance(target, collections.Iterable):
+            try:
+                self.assertIsEmpty(target)
+            except AssertionError:
+                pass
+            else:
+                message = u'Iterable is empty.\n%s.' % target
+                raise AssertionError(message.encode('utf-8'))
+            return
+
         if len(target) == 0:
             raise AssertionError('Value is empty.\n%s.' % (target))
 
@@ -1185,18 +1207,18 @@ class ChevahTestCase(TwistedTestCase):
             raise AssertionError(message.encode('utf-8'))
 
     def assertContains(self, token, source):
-        '''
+        """
         Raise AssertionError if source does not contain `token`.
-        '''
+        """
         if not token in source:
             message = u'%s does not contains %s.' % (
                 repr(source), repr(token))
             raise AssertionError(message.encode('utf-8'))
 
     def assertNotContains(self, token, source):
-        '''
+        """
         Raise AssertionError if source does contain `token`.
-        '''
+        """
         if token in source:
             message = u'%s contains %s.' % (repr(source), repr(token))
             raise AssertionError(message.encode('utf-8'))

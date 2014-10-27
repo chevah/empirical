@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.30.2 - 27/10/2014
+-------------------
+
+* Add support for Iterable in assertIsEmpty/assertIsNotEmpty.
+
+
 0.30.1 - 04/10/2014
 -------------------
 
