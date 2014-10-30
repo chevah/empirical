@@ -2,6 +2,25 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.31.2 - 29/10/2014
+-------------------
+
+* Fix writeFileContent to always write file in UTF-8 mode.
+
+
+0.31.1 - 29/10/2014
+-------------------
+
+* Merge with forgotten code from 0.30.2
+
+
+0.31.0 - 29/10/2014
+-------------------
+
+* Add prefix and suffix option for creating folder in temp.
+* Add helper method to replace content to existing file.
+
+
 0.30.2 - 27/10/2014
 -------------------
 

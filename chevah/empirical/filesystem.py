@@ -129,6 +129,14 @@ class LocalTestFilesystem(LocalFilesystem):
         self.createFile(temp_segments, content=content, length=length)
         return temp_segments
 
+    def writeFileContent(self, segments, content):
+        """
+        Write content into file replacing existing content.
+        """
+        opened_file = self.openFileForWriting(segments, utf8=True)
+        opened_file.write(content)
+        opened_file.close()
+
     def _makeFilename(self, prefix=u'', suffix=u''):
         """
         Return a testing filename.
@@ -148,7 +156,7 @@ class LocalTestFilesystem(LocalFilesystem):
         path = os.path.join(self.temp_path, name)
         return (path, segments)
 
-    def createFolderInTemp(self, foldername=None):
+    def createFolderInTemp(self, foldername=None, prefix=u'', suffix=u''):
         """
         Create a folder in the temporary folder.
 
@@ -156,7 +164,7 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         if foldername is None:
             # We add an unicode to the temp filename.
-            foldername = self._makeFilename()
+            foldername = self._makeFilename(prefix=prefix, suffix=suffix)
 
         temp_segments = self.temp_segments
 
