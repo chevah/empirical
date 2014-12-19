@@ -2,6 +2,28 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.32.2 - 18/12/2014
+-------------------
+
+* Add check for request method.
+* Rename MockHTTPServer to HTTPServerContext and MockHTTPResponse to
+  ResponseDefinition.
+
+
+0.32.1 - 17/12/2014
+-------------------
+
+* Mocking HTTP server not uses HTTP/1.1
+* Add check for persistent HTTP connection requests.
+
+
+0.32.0 - 17/12/2014
+-------------------
+
+* Allow mocking HTTP response message/phrase beside the response code and
+  a response length.
+
+
 0.31.2 - 29/10/2014
 -------------------
 

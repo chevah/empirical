@@ -28,9 +28,9 @@ from chevah.empirical.constants import (
     )
 
 
-class StoppableHttpServer(BaseHTTPServer.HTTPServer):
+class _StoppableHTTPServer(BaseHTTPServer.HTTPServer):
     """
-    BaseHTTPServer but with a stopabele server_forever.
+    BaseHTTPServer but with a stoppable server_forever.
     """
     def serve_forever(self):
         """Handle one request at a time until stopped."""
@@ -45,13 +45,13 @@ class StoppableHttpServer(BaseHTTPServer.HTTPServer):
                 raise
 
 
-class ThreadedHTTPServer(Thread):
+class _ThreadedHTTPServer(Thread):
     """
     HTTP Server that runs in a thread.
 
     This is actual a threaded wrapper around an HTTP server.
 
-    Only use it for testing.
+    Only use it for testing together with HTTPServerContext.
     """
     TIMEOUT = 1
 
@@ -70,8 +70,8 @@ class ThreadedHTTPServer(Thread):
         self.httpd = None
         while self.httpd is None:
             try:
-                self.httpd = StoppableHttpServer(
-                    (self._ip, self._port), MockRequestHandler)
+                self.httpd = _StoppableHTTPServer(
+                    (self._ip, self._port), _DefinedRequestHandler)
             except Exception, e:
                 # I have no idea why this code works.
                 # It is a copy paste from:
@@ -98,7 +98,7 @@ class ThreadedHTTPServer(Thread):
         self.httpd.serve_forever()
 
 
-class MockHTTPServer(object):
+class HTTPServerContext(object):
     """
     A context manager which runs a HTTP server for testing simple
     HTTP requests.
@@ -106,39 +106,43 @@ class MockHTTPServer(object):
     After the server is started the ip and port are available in the
     context management instance.
 
-    responses = [MockHTTPResponse(url='/hello.html', response='Hello!)]
-    with MochHTTPServer(responses=responses) as httpd:
+    response = ResponseDefinition(url='/hello.html', response_content='Hello!)
+    with HTTPServerContext([response]) as httpd:
         print 'Listening at %s:%d' % (httpd.id, httpd.port)
         self.assertEqual('Hello!', your_get())
 
-    responses = [
-        MockHTTPResponse(
-            url='/hello.php', request='user=John',
-            response_content='Hello John!, response_code=202)]
-    with MockHTTPServer(responses=responses) as httpd:
+    responses = ResponseDefinition(
+        url='/hello.php', request='user=John',
+        response_content='Hello John!, response_code=202)
+    with HTTPServerContext([response]) as httpd:
         self.assertEqual(
             'Hello John!',
             get_you_post(url='hello.php', data='user=John'))
     """
 
-    def __init__(self, responses=None, ip='127.0.0.1', port=0, debug=False):
-        '''Initialize a new MockHTTPServer.
+    def __init__(
+            self, responses=None, ip='127.0.0.1', port=0,
+            version='HTTP/1.1', debug=False):
+        """
+        Initialize a new HTTPServerContext.
 
          * ip - IP to listen. Leave empty to listen to any interface.
          * port - Port to listen. Leave 0 to pick a random port.
-         * responses - A list of MockHTTPResponse defining the behavior of
+         * server_version - HTTP version used by server.
+         * responses - A list of ResponseDefinition defining the behavior of
                         this server.
-        '''
-        # Since we can not pass an instance of MockRequestHandler
+        """
+        # Since we can not pass an instance of _DefinedRequestHandler
         # we do on the fly patching here.
-        MockRequestHandler.debug = debug
+        _DefinedRequestHandler.debug = debug
         if responses is None:
-            MockRequestHandler.valid_responses = []
+            _DefinedRequestHandler.valid_responses = []
         else:
-            MockRequestHandler.valid_responses = responses
+            _DefinedRequestHandler.valid_responses = responses
 
+        _DefinedRequestHandler.server_version = version
         self.cond = threading.Condition()
-        self.server = ThreadedHTTPServer(cond=self.cond, ip=ip, port=port)
+        self.server = _ThreadedHTTPServer(cond=self.cond, ip=ip, port=port)
 
     def __enter__(self):
         self.cond.acquire()
@@ -153,6 +157,9 @@ class MockHTTPServer(object):
     def __exit__(self, exc_type, exc_value, tb):
         self.stopServer()
         self.server.join(1)
+        # Since we keep responses on class, we need to clean
+        # them on exit.
+        _DefinedRequestHandler.valid_responses = None
         return False
 
     @property
@@ -169,7 +176,12 @@ class MockHTTPServer(object):
         conn.getresponse()
 
 
-class MockRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    """
+    A request handler which act based on pre-defined responses.
+
+    This should only be used for test together with HTTPServerContext.
+    """
 
     valid_responses = []
 
@@ -187,78 +199,93 @@ class MockRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.stop = True
 
     def do_GET(self):
-        response = self._getResponse()
-        if response:
-            self.send_response(response.response_code)
-            self.send_header("Content-type", response.content_type)
-            self.end_headers()
-            self.wfile.write(response.test_response_content)
-        else:
-            self.send_error(404)
-
-    def _getResponse(self):
-        '''Return the MockHTTPResponse for the current request.'''
-        for response in self.__class__.valid_responses:
-            if self.path == response.url:
-                return response
-        # If no response was found, return None.
-        return None
+        self._handleRequest()
 
     def do_POST(self):
-        if self._haveValidURL():
-            length = int(self.headers.getheader('content-length'))
-            request = self.rfile.read(length)
-            response = self._postResponse(request)
-            if response:
-                self.send_response(response.response_code)
-                self.send_header("Content-type", response.content_type)
-                self.end_headers()
-                self.wfile.write(response.test_response_content)
-            else:
-                if self.debug:
-                    print '\nserver got data - %s\nserver exp data - %s\n' % (
-                        request, unicode(self._getAcceptedRequests()))
-                self.send_error(400)
-        else:
-            if self.debug:
-                print '\nserver got url - %s\nserver exp url - %s\n' % (
-                    self.path, unicode(self._getAcceptedURLs()))
-            self.send_error(404)
+        self._handleRequest()
 
-    def _postResponse(self, request):
-        '''Return a tuple containing the'''
+    def _handleRequest(self):
+        """
+        Check if we can handle the request and send response.
+        """
+        response = self._matchResponse()
+        if response:
+            self._sendReponse(response)
+            return
+
+        self.send_error(404)
+
+    def _matchResponse(self):
+        """
+        Return the ResponseDefinition for the current request.
+        """
         for response in self.__class__.valid_responses:
-            if response.url == self.path and response.request == request:
-                return response
+            if self.path != response.url or self.command != response.method:
+                self._debug()
+                continue
+
+            # For POST request we read content.
+            if self.command == 'POST':
+                length = int(self.headers.getheader('content-length'))
+                content = self.rfile.read(length)
+                if content != response.request:
+                    self._debug(content)
+                    continue
+
+            # We have a match.
+            return response
+
         return None
 
-    def _getAcceptedURLs(self):
-        '''Return the list of URLs accepted by the server.'''
-        result = []
-        for response in self.__class__.valid_responses:
-            result.append(response.url)
-        return result
+    def _debug(self, message=''):
+        """
+        Print to stdout a debug message.
+        """
+        if not self.debug:
+            return
+        print '\nGot %s:%s - %s\n' % (
+            self.command, self.path, message)
 
-    def _getAcceptedRequests(self):
-        '''Return the list of request contents accepted by this server.'''
-        result = []
-        for response in self.__class__.valid_responses:
-            if response.url == self.path:
-                result.append(response.request)
-        return result
+    def _sendReponse(self, response):
+        """
+        Send response to client.
+        """
+        connection_header = self.headers.getheader('connection')
+        if connection_header:
+            connection_header = connection_header.lower()
 
-    def _haveValidURL(self):
-        '''Return True if the current request is in the list of URLs
-        accepted by the server.'''
-        for response in self.__class__.valid_responses:
-            if self.path == response.url:
-                return True
-        return False
+        if self.server_version == 'HTTP/1.1':
+            # For HTTP/1.1 connections are persistent by default.
+            if not connection_header:
+                connection_header = 'keep-alive'
+        else:
+            # For HTTP/1.0 connections are not persistent by default.
+            if not connection_header:
+                connection_header = 'close'
+
+        if response.persistent is None:
+            # Ignore persistent flag.
+            pass
+        elif response.persistent:
+            if connection_header == 'close':
+                self.send_error(400, 'Connection is not persistent')
+        else:
+            if connection_header == 'keep-alive':
+                self.send_error(400, 'Connection was persistent')
+
+        self.send_response(
+            response.response_code, response.response_message)
+        self.send_header("Content-type", response.content_type)
+        if response.response_length:
+            self.send_header("Content-length", response.response_length)
+        self.end_headers()
+        self.wfile.write(response.test_response_content)
 
 
-class MockHTTPResponse(object):
-    '''A class encapsulating the required data for configuring a response
-    generated by the MockHTTPServer.
+class ResponseDefinition(object):
+    """
+    A class encapsulating the required data for configuring a response
+    generated by the HTTPServerContext.
 
     It contains the following data:
         * url - url that will trigger this response
@@ -266,16 +293,31 @@ class MockHTTPResponse(object):
                     matched
         * response_content - content of the response
         * response_code - HTTP code of the response
+        * response_message - Message sent together with HTTP code.
         * content_type - Content type of the HTTP response
-    '''
+        * response_length - Length of the response body content.
+          `None` to calculate automatically the length.
+          `` (empty string) to ignore content-length header.
+        * persistent: whether the request should persist the connection.
+          Set to None to ignore persistent checking.
+    """
 
-    def __init__(self, url='', request='', response_content='',
-                 response_code=200, content_type='text/html'):
+    def __init__(
+        self, url='', request='', method='GET',
+        response_content='', response_code=200, response_message=None,
+        content_type='text/html', response_length=None, persistent=True,
+            ):
         self.url = url
+        self.method = method
         self.request = request
         self.test_response_content = response_content
         self.response_code = response_code
+        self.response_message = response_message
         self.content_type = content_type
+        if response_length is None:
+            response_length = len(response_content)
+        self.response_length = str(response_length)
+        self.persistent = persistent
 
 
 class TestSSLContextFactory(object):
