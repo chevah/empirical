@@ -16,10 +16,13 @@ import uuid
 
 from OpenSSL import SSL, crypto
 
-from twisted.internet import address, defer
-from twisted.internet.protocol import Factory
-from twisted.internet.tcp import Port
-
+try:
+    from twisted.internet import address, defer
+    from twisted.internet.protocol import Factory
+    from twisted.internet.tcp import Port
+except ImportError:
+    # Twisted support is optional.
+    pass
 
 from chevah.compat import DefaultAvatar
 from chevah.empirical.filesystem import LocalTestFilesystem

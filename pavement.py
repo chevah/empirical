@@ -25,7 +25,7 @@ BUILD_PACKAGES = [
     'docutils>=0.9.1-chevah2',
 
     # Buildbot is used for try scheduler
-    'buildbot==0.8.8.c1',
+    'buildbot==0.8.11.pre.143.gac88f1b.c2',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',

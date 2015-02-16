@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.33.1 - 15/01/2015
+-------------------
+
+* Make zope.interface dependency optional.
+
+
+0.33.0 - 15/01/2015
+-------------------
+
+* Make Twisted dependency optional.
+
+
 0.32.2 - 18/12/2014
 -------------------
 

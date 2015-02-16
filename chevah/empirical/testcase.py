@@ -17,9 +17,17 @@ import time
 from bunch import Bunch
 from mock import patch, Mock
 from nose import SkipTest
-from twisted.internet.defer import Deferred
-from twisted.internet.posixbase import _SocketWaker, _UnixWaker, _SIGCHLDWaker
-from twisted.python.failure import Failure
+try:
+    from twisted.internet.defer import Deferred
+    from twisted.internet.posixbase import (
+        _SocketWaker, _UnixWaker, _SIGCHLDWaker
+        )
+    from twisted.python.failure import Failure
+except ImportError:
+    # Twisted support is optional.
+    _SocketWaker = None
+    _UnixWaker = None
+    _SIGCHLDWaker = None
 
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Python 2.7.
@@ -30,7 +38,11 @@ if sys.version_info[0:2] < (2, 7):
 else:
     from unittest import TestCase
 
-from zope.interface.verify import verifyObject
+try:
+    from zope.interface.verify import verifyObject
+except ImportError:
+    # Zope support is optional.
+    pass
 
 from chevah.compat import (
     DefaultAvatar,
@@ -45,8 +57,11 @@ from chevah.empirical.constants import (
     )
 
 
-# Import reactor last in case some other modules are changing the reactor.
-from twisted.internet import reactor
+try:
+    # Import reactor last in case some other modules are changing the reactor.
+    from twisted.internet import reactor
+except ImportError:
+    reactor = None
 
 
 def _get_hostname():
@@ -159,6 +174,8 @@ class TwistedTestCase(TestCase):
         """
         Remove all delayed calls, readers and writers from the reactor.
         """
+        if not reactor:
+            return
         try:
             reactor.removeAll()
         except (RuntimeError, KeyError):
@@ -272,6 +289,8 @@ class TwistedTestCase(TestCase):
         """
         Check that the reactor has no delayed calls, readers or writers.
         """
+        if reactor is None:
+            return
 
         def raise_failure(location, reason):
             raise AssertionError(
@@ -695,6 +714,9 @@ class ChevahTestCase(TwistedTestCase):
     #: Obsolete. Please use self.patch and self.patchObject.
     Patch = patch
 
+    _environ_user = None
+    _drop_user = '-'
+
     def setUp(self):
         super(ChevahTestCase, self).setUp()
         self.__cleanup__ = []
@@ -810,6 +832,8 @@ class ChevahTestCase(TwistedTestCase):
         if 'USERNAME' in os.environ and not 'USER' in os.environ:
             os.environ['USER'] = os.environ['USERNAME']
 
+        cls._environ_user = os.environ['USER']
+
         cls.cleanTemporaryFolder()
 
     @classmethod
@@ -913,8 +937,8 @@ class ChevahTestCase(TwistedTestCase):
         segments = factory.fs.getSegmentsFromRealPath(path)
         return cls._cleanFolder(segments)
 
-    @staticmethod
-    def _cleanFolder(folder_segments):
+    @classmethod
+    def _cleanFolder(cls, folder_segments):
         """
         Clean all test files from folder_segments.
 
@@ -925,7 +949,7 @@ class ChevahTestCase(TwistedTestCase):
 
         # In case we are running the test suite as super user,
         # we use super filesystem for cleaning.
-        if os.environ['USER'] == os.environ['DROP_USER']:
+        if cls._environ_user == cls._drop_user:
             temp_avatar = SuperAvatar()
         else:
             temp_avatar = DefaultAvatar()
