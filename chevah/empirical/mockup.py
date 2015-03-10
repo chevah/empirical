@@ -187,7 +187,9 @@ class HTTPServerContext(object):
         if connection and connection.rfile._sock:
             # Stop waiting for data from persistent connection.
             self.server.httpd.stopped = True
-            connection.rfile._sock.shutdown(socket.SHUT_RDWR)
+            sock = connection.rfile._sock
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
         else:
             # Stop waiting for data from new connection.
             # This is done by sending a special QUIT request without

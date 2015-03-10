@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.34.1 - 10/03/2015
+-------------------
+
+* Fix HTTPServerContext close on Windows.
+
+
 0.34.0 - 10/03/2015
 -------------------
 
