@@ -12,23 +12,19 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'twisted==12.1.0-chevah3',
+    'twisted==12.1.0.chevah5',
     'chevah-compat==0.24.0',
+    # Reqired for compat testing.
+    'unidecode',
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
     ]
 
 BUILD_PACKAGES = [
-    'sphinx==1.1.3-chevah1',
-    'repoze.sphinx.autointerface==0.7.1-chevah2',
-    # Docutils is required for RST parsing and for Sphinx.
-    'docutils>=0.9.1-chevah2',
-
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.pre.143.gac88f1b.c2',
 
     # For PQM
-    'chevah-github-hooks-server==0.1.6',
     'smmap==0.8.2',
     'async==0.6.1',
     'gitdb==0.5.4',
@@ -47,11 +43,8 @@ TEST_PACKAGES = [
     'nose==1.3.0-c5',
     'mock',
 
-    # Test SFTP service using a 3rd party client.
-    'paramiko',
-
-    # Required for some unicode handling.
-    'unidecode',
+    # Used to test HTTPServerContext
+    'requests==2.5.3',
 
     'bunch',
     ]

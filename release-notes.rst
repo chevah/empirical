@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.34.0 - 10/03/2015
+-------------------
+
+* Add strict checking for persistent connection by.
+
+
 0.33.1 - 15/01/2015
 -------------------
 
