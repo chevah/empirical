@@ -34,9 +34,13 @@ from chevah.empirical.constants import (
 
 class _StoppableHTTPServer(BaseHTTPServer.HTTPServer):
     """
-    BaseHTTPServer but with a stoppable server_forever.
+    Single connection HTTP server designed to respond to HTTP requests in
+    functional tests..
     """
     server_version = 'ChevahTesting/0.1'
+    stopped = False
+    # Current connection served by the server.
+    #active_connection = None
 
     def serve_forever(self):
         """

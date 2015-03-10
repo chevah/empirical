@@ -61,6 +61,13 @@ class TestHTTPServerContext(EmpiricalTestCase):
             response = self.getPage('/test.html', persistent=False)
             self.assertEqual(u'test', response.text)
 
+    def test_HTTPServerContext_close_without_connections(self):
+        """
+        Does not fail if just started without doing any connection.
+        """
+        with HTTPServerContext([]):
+            pass
+
     def test_GET_no_response(self):
         """
         Return 404 when no response is configured.
