@@ -10,6 +10,7 @@ import hashlib
 import httplib
 import os
 import random
+import socket
 import string
 import threading
 import uuid
@@ -33,12 +34,21 @@ from chevah.empirical.constants import (
 
 class _StoppableHTTPServer(BaseHTTPServer.HTTPServer):
     """
-    BaseHTTPServer but with a stoppable server_forever.
+    Single connection HTTP server designed to respond to HTTP requests in
+    functional tests.
     """
+    server_version = 'ChevahTesting/0.1'
+    stopped = False
+    # Current connection served by the server.
+    active_connection = None
+
     def serve_forever(self):
-        """Handle one request at a time until stopped."""
-        self.stop = False
-        while not self.stop:
+        """
+        Handle one request at a time until stopped.
+        """
+        self.stopped = False
+        self.active_connection = None
+        while not self.stopped:
             try:
                 self.handle_request()
             except SelectError, e:
@@ -79,7 +89,6 @@ class _ThreadedHTTPServer(Thread):
                 # I have no idea why this code works.
                 # It is a copy paste from:
                 # http://www.ianlewis.org/en/testing-using-mocked-server
-                import socket
                 import errno
                 import time
                 if (isinstance(e, socket.error) and
@@ -143,7 +152,7 @@ class HTTPServerContext(object):
         else:
             _DefinedRequestHandler.valid_responses = responses
 
-        _DefinedRequestHandler.server_version = version
+        _DefinedRequestHandler.protocol_version = version
         self.cond = threading.Condition()
         self.server = _ThreadedHTTPServer(cond=self.cond, ip=ip, port=port)
 
@@ -158,11 +167,15 @@ class HTTPServerContext(object):
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
+        # _DefinedRequestHandler initialization is outside of control so
+        # we share state as class members. To free memory we need to clean it.
+        _DefinedRequestHandler.cleanGlobals()
+
         self.stopServer()
         self.server.join(1)
-        # Since we keep responses on class, we need to clean
-        # them on exit.
-        _DefinedRequestHandler.valid_responses = None
+        if self.server.isAlive():
+            raise AssertionError('Server still running')
+
         return False
 
     @property
@@ -174,12 +187,24 @@ class HTTPServerContext(object):
         return self.server.httpd.server_address[0]
 
     def stopServer(self):
-        conn = httplib.HTTPConnection("%s:%d" % (self.ip, self.port))
-        conn.request("QUIT", "/")
-        conn.getresponse()
+        connection = self.server.httpd.active_connection
+        if connection and connection.rfile._sock:
+            # Stop waiting for data from persistent connection.
+            self.server.httpd.stopped = True
+            sock = connection.rfile._sock
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+        else:
+            # Stop waiting for data from new connection.
+            # This is done by sending a special QUIT request without
+            # waiting for data.
+            conn = httplib.HTTPConnection("%s:%d" % (self.ip, self.port))
+            conn.request("QUIT", "/")
+            conn.getresponse()
+        self.server.httpd.server_close()
 
 
-class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler, object):
     """
     A request handler which act based on pre-defined responses.
 
@@ -189,17 +214,43 @@ class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     valid_responses = []
 
     debug = False
+    # Keep a record of first client which connects to the request
+    # series to have a better check for persisted connections.
+    first_client = None
+
+    def __init__(self, request, client_address, server):
+        if self.debug:
+            print 'New connection %s.' % (client_address,)
+        # Register current connection on server.
+        server.active_connection = self
+        try:
+            super(_DefinedRequestHandler, self).__init__(
+                request, client_address, server)
+        except socket.error:
+            pass
+        server.active_connection = None
+
+    @classmethod
+    def cleanGlobals(cls):
+        """
+        Clean all class methods used to share info between different requests.
+        """
+        cls.valid_responses = None
+        cls.first_client = None
 
     def log_message(self, *args):
         pass
 
     def do_QUIT(self):
         """
-        send 200 OK response, and set server.stop to True
+        Called by HTTPServerContext to trigger server stop.
         """
+        self.server.stopped = True
+        self._debug('QUIT')
         self.send_response(200)
         self.end_headers()
-        self.server.stop = True
+        # Force closing the connection.
+        self.close_connection = 1
 
     def do_GET(self):
         self._handleRequest()
@@ -211,9 +262,16 @@ class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
         Check if we can handle the request and send response.
         """
+        if not self.first_client:
+            # Looks like this is the first request so we save the client
+            # address to compare it later.
+            self.__class__.first_client = self.client_address
+
         response = self._matchResponse()
         if response:
+            self._debug(response)
             self._sendReponse(response)
+            self._debug('Close-connection: %s' % (self.close_connection,))
             return
 
         self.send_error(404)
@@ -257,7 +315,7 @@ class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if connection_header:
             connection_header = connection_header.lower()
 
-        if self.server_version == 'HTTP/1.1':
+        if self.protocol_version == 'HTTP/1.1':
             # For HTTP/1.1 connections are persistent by default.
             if not connection_header:
                 connection_header = 'keep-alive'
@@ -271,18 +329,28 @@ class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             pass
         elif response.persistent:
             if connection_header == 'close':
-                self.send_error(400, 'Connection is not persistent')
+                self.send_error(400, 'Headers do not persist the connection')
+
+            if self.first_client != self.client_address:
+                self.send_error(400, 'Persistent connection not reused')
         else:
             if connection_header == 'keep-alive':
                 self.send_error(400, 'Connection was persistent')
 
         self.send_response(
             response.response_code, response.response_message)
-        self.send_header("Content-type", response.content_type)
+        self.send_header("Content-Type", response.content_type)
+
         if response.response_length:
-            self.send_header("Content-length", response.response_length)
+            self.send_header("Content-Length", response.response_length)
+
         self.end_headers()
         self.wfile.write(response.test_response_content)
+
+        if not response.response_persistent:
+            # Force closing the connection as requested
+            # by response.
+            self.close_connection = 1
 
 
 class ResponseDefinition(object):
@@ -308,7 +376,8 @@ class ResponseDefinition(object):
     def __init__(
         self, url='', request='', method='GET',
         response_content='', response_code=200, response_message=None,
-        content_type='text/html', response_length=None, persistent=True,
+        content_type='text/html', response_length=None,
+        persistent=True, response_persistent=None,
             ):
         self.url = url
         self.method = method
@@ -321,6 +390,18 @@ class ResponseDefinition(object):
             response_length = len(response_content)
         self.response_length = str(response_length)
         self.persistent = persistent
+        if response_persistent is None:
+            response_persistent = persistent
+
+        self.response_persistent = response_persistent
+
+    def __repr__(self):
+        return 'ResponseDefinition:%s:%s:%s %s:pers-%s' % (
+            self.url,
+            self.method,
+            self.response_code, self.response_message,
+            self.persistent,
+            )
 
 
 class TestSSLContextFactory(object):

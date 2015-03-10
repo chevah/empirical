@@ -1,11 +1,9 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Tests for the testing infrastructure.
-
-Stay tunes, the infinite loop is near...
-'''
-from __future__ import with_statement
-from urllib2 import URLError, urlopen
+"""
+Tests for the testing infrastructure.
+"""
+import requests
 
 from chevah.empirical.mockup import (
     ChevahCommonsFactory,
@@ -20,18 +18,31 @@ class TestHTTPServerContext(EmpiricalTestCase):
     Tests for HTTPServerContext.
     """
 
-    def openPage(self, location, data=None):
+    def getPage(
+            self, location, method='GET', data=None,
+            persistent=True, session=None):
         """
         Open a page using default mocked server.
         """
-        try:
-            return urlopen(
-                'http://%s:%d%s' % (
-                    self.httpd.ip, self.httpd.port, location),
-                data=data,
-                )
-        except URLError as error:
-            return error
+        if session is None:
+            session = requests
+
+        if method == 'POST':
+            request_method = session.post
+        else:
+            request_method = session.get
+
+        final_headers = {}
+        if not persistent:
+            final_headers['connection'] = 'close'
+
+        return request_method(
+            'http://%s:%d%s' % (
+                self.httpd.ip, self.httpd.port, location),
+            data=data,
+            headers=final_headers,
+            stream=False,
+            )
 
     def test_HTTPServerContext_default(self):
         """
@@ -44,21 +55,27 @@ class TestHTTPServerContext(EmpiricalTestCase):
             persistent=False,
             )
 
-        with HTTPServerContext([response]) as httpd:
-            self.assertIsNotNone(httpd.ip)
-            self.assertIsNotNone(httpd.port)
-            response = urlopen(
-                "http://%s:%d/test.html" % (httpd.ip, httpd.port))
-            self.assertEqual('test', response.read())
+        with HTTPServerContext([response]) as self.httpd:
+            self.assertIsNotNone(self.httpd.ip)
+            self.assertIsNotNone(self.httpd.port)
+            response = self.getPage('/test.html', persistent=False)
+            self.assertEqual(u'test', response.text)
+
+    def test_HTTPServerContext_close_without_connections(self):
+        """
+        Does not fail if just started without doing any connection.
+        """
+        with HTTPServerContext([]):
+            pass
 
     def test_GET_no_response(self):
         """
         Return 404 when no response is configured.
         """
         with HTTPServerContext([]) as self.httpd:
-            response = self.openPage('/test.html')
+            response = self.getPage('/test.html')
 
-        self.assertEqual(404, response.code)
+        self.assertEqual(404, response.status_code)
 
     def test_GET_not_found(self):
         """
@@ -66,9 +83,9 @@ class TestHTTPServerContext(EmpiricalTestCase):
         """
         response = ResponseDefinition(url='/other')
         with HTTPServerContext([response]) as self.httpd:
-            response = self.openPage('/test.html')
+            response = self.getPage('/test.html')
 
-        self.assertEqual(404, response.code)
+        self.assertEqual(404, response.status_code)
 
     def test_GET_bad_method(self):
         """
@@ -76,9 +93,9 @@ class TestHTTPServerContext(EmpiricalTestCase):
         """
         response = ResponseDefinition(method='POST', url='/url')
         with HTTPServerContext([response]) as self.httpd:
-            response = self.openPage('/url')
+            response = self.getPage('/url')
 
-        self.assertEqual(404, response.code)
+        self.assertEqual(404, response.status_code)
 
     def test_GET_not_persistent(self):
         """
@@ -86,20 +103,67 @@ class TestHTTPServerContext(EmpiricalTestCase):
         """
         response = ResponseDefinition(url='/url', persistent=True)
         with HTTPServerContext([response]) as self.httpd:
-            response = self.openPage('/url')
+            response = self.getPage('/url', persistent=False)
 
-        self.assertEqual(400, response.code)
-        self.assertEqual('Connection is not persistent', response.reason)
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(
+            'Headers do not persist the connection', response.reason)
 
     def test_GET_persistent_ignore(self):
         """
-        When set to None it will ignore the persistance check.
+        When set to None it will ignore the persistence check.
         """
         response = ResponseDefinition(url='/url', persistent=None)
         with HTTPServerContext([response]) as self.httpd:
-            response = self.openPage('/url')
+            response = self.getPage('/url')
 
-        self.assertEqual(200, response.code)
+        self.assertEqual(200, response.status_code)
+
+    def test_GET_persistent_good(self):
+        """
+        Will pass if connections are made using same connection,
+        ie they are persisted.
+        """
+        response = ResponseDefinition(
+            method='GET',
+            url='/url',
+            response_content='good',
+            persistent=True,
+            )
+
+        session = requests.Session()
+
+        with HTTPServerContext([response]) as self.httpd:
+            response = self.getPage('/url', session=session)
+
+            self.assertEqual(200, response.status_code)
+
+            response = self.getPage('/url', session=session)
+
+            self.assertEqual(200, response.status_code)
+            self.assertEqual('good', response.content)
+
+    def test_GET_persistent_not_reused(self):
+        """
+        Will fail if connections are not made using same remote connection.
+        """
+        response = ResponseDefinition(
+            method='GET',
+            url='/url',
+            response_content='good',
+            persistent=True,
+            )
+
+        with HTTPServerContext([response]) as self.httpd:
+            response = self.getPage('/url')
+
+            self.assertEqual(200, response.status_code)
+
+            response = self.getPage('/url')
+
+            self.assertEqual(400, response.status_code)
+            self.assertEqual(
+                'Persistent connection not reused', response.reason)
 
     def test_do_POST_good(self):
         """
@@ -115,10 +179,12 @@ class TestHTTPServerContext(EmpiricalTestCase):
             response_content='content',
             )
         with HTTPServerContext([response]) as self.httpd:
-            response = self.openPage('/url', data='request-body')
+            response = self.getPage(
+                '/url', method='POST', data='request-body', persistent=False)
 
-        self.assertEqual(242, response.code)
-        self.assertEqual('content', response.read())
+            self.assertEqual(242, response.status_code)
+            # Read content before closing the server.
+            self.assertEqual(u'content', response.text)
 
     def test_do_POST_invalid_content(self):
         """
@@ -131,9 +197,9 @@ class TestHTTPServerContext(EmpiricalTestCase):
             persistent=False,
             )
         with HTTPServerContext([response]) as self.httpd:
-            response = self.openPage('/url', data='other-body')
+            response = self.getPage('/url', method='POST', data='other-body')
 
-        self.assertEqual(404, response.code)
+        self.assertEqual(404, response.status_code)
 
 
 class TestFactory(EmpiricalTestCase):

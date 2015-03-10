@@ -2,6 +2,24 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.34.2 - 10/03/2015
+-------------------
+
+* Fix HTTPServerContext stopping before making any connection.
+
+
+0.34.1 - 10/03/2015
+-------------------
+
+* Fix HTTPServerContext close on Windows.
+
+
+0.34.0 - 10/03/2015
+-------------------
+
+* Add strict checking for persistent connection by verifying client IP:PORT.
+
+
 0.33.1 - 15/01/2015
 -------------------
 
