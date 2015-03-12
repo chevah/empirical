@@ -592,6 +592,21 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         self.assertTrue(self.called)
         self.assertTrue(deferred.called)
 
+    def test_assertIsEmpty(self):
+        """
+        Raise an exception when not empty and otherwise does nothing.
+        """
+        self.assertIsEmpty(())
+        self.assertIsEmpty([])
+        self.assertIsEmpty('')
+        self.assertIsEmpty(set())
+
+        with self.assertRaises(AssertionError) as context:
+            self.assertIsEmpty((1, 2))
+
+        self.assertEqual(
+            'Iterable is not empty.\n(1, 2).', context.exception.args[0])
+
 
 @conditionals.onOSFamily('posiX')
 class TestClassConditionalsPosix(EmpiricalTestCase):

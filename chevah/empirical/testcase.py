@@ -1197,7 +1197,7 @@ class ChevahTestCase(TwistedTestCase):
             except StopIteration:
                 pass
             else:
-                message = u'Iterable is not empty.\n%s.' % target
+                message = u'Iterable is not empty.\n%s.' % (target,)
                 raise AssertionError(message.encode('utf-8'))
             return
 

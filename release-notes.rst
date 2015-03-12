@@ -2,6 +2,19 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.34.4 - 12/03/2015
+-------------------
+
+* Fix closing the HTTPServerContext when the persistent connection is
+  already dropped.
+
+
+0.34.3 - 11/03/2015
+-------------------
+
+* Fix assertIsEmpty.
+
+
 0.34.2 - 10/03/2015
 -------------------
 
