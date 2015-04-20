@@ -3,6 +3,10 @@
 """
 Tests for ChevahTestCase.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import object
 import os
 import sys
 import time
@@ -59,7 +63,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
             self.runDeferred(delayed_call)
 
         self.assertEqual(
-            'This is not a deferred.', context.exception.message)
+            'This is not a deferred.', context.exception.args[0])
 
     def test_runDeferred_timeout(self):
         """
@@ -73,7 +77,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
 
         self.assertEqual(
             'Deferred took more than 0 to execute.',
-            context.exception.message
+            context.exception.args[0]
             )
 
         # Restore order order messing with internal timeout state in
@@ -313,7 +317,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         with self.assertRaises(AssertionError) as context:
             self.assertTempIsClean()
 
-        message = context.exception.message.decode('utf-8')
+        message = context.exception.args[0].decode('utf-8')
         self.assertStartsWith(u'Temporary folder is not clean.', message)
         self.assertContains(temp_segments[-1], message)
 
@@ -410,7 +414,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         with self.assertRaises(AssertionError) as context:
             self.assertWorkingFolderIsClean()
 
-        message = context.exception.message.decode('utf-8')
+        message = context.exception.args[0].decode('utf-8')
         for member in content:
             self.assertContains(member, message)
 

@@ -3,6 +3,10 @@
 """
 Tests for the testing infrastructure.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from future.types import newstr
 import requests
 
 from chevah.empirical.mockup import (
@@ -217,7 +221,7 @@ class TestFactory(EmpiricalTestCase):
             mk.string(),
             mk.string(),
             )
-        self.assertIsInstance(unicode, mk.string())
+        self.assertIsInstance(newstr, mk.string())
 
     def test_number(self):
         """

@@ -3,6 +3,10 @@
 """
 Tests for testing filesystem
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
 from chevah.empirical import EmpiricalTestCase, mk
 from chevah.empirical.filesystem import LocalTestFilesystem
 
@@ -50,9 +54,9 @@ class TestLocalTestFilesystem(EmpiricalTestCase):
         try:
             # Will contain both the new temporary folder, but also
             # the general mk.fs folder.
-            message = context.exception.message
-            self.assertContains(unicode(temp.temp_segments), message)
-            self.assertContains(unicode(mk.fs.temp_segments), message)
+            message = context.exception.args[0]
+            self.assertContains(str(temp.temp_segments), message)
+            self.assertContains(str(mk.fs.temp_segments), message)
             self.assertFalse(temp.exists(temp.temp_segments))
             self.assertFalse(temp.exists(mk.fs.temp_segments))
         finally:

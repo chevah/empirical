@@ -3,6 +3,9 @@
 """
 Tests for empirical package executed under elevated accounts.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 from chevah.compat import process_capabilities
 from chevah.compat.testing import (
     setup_access_control,

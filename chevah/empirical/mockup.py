@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
-'''Module containing helpers for testing the Chevah server.'''
-from __future__ import with_statement
+"""
+Module containing helpers for testing the Chevah project.
+"""
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 
 from select import error as SelectError
 from threading import Thread
-import BaseHTTPServer
+import http.server
 import errno
 import hashlib
-import httplib
+import http.client
 import os
 import random
 import socket
@@ -32,7 +39,7 @@ from chevah.empirical.constants import (
     )
 
 
-class _StoppableHTTPServer(BaseHTTPServer.HTTPServer):
+class _StoppableHTTPServer(http.server.HTTPServer):
     """
     Single connection HTTP server designed to respond to HTTP requests in
     functional tests.
@@ -51,7 +58,7 @@ class _StoppableHTTPServer(BaseHTTPServer.HTTPServer):
         while not self.stopped:
             try:
                 self.handle_request()
-            except SelectError, e:
+            except SelectError as e:
                 # See Python http://bugs.python.org/issue7978
                 if e.args[0] == errno.EINTR:
                     continue
@@ -85,7 +92,7 @@ class _ThreadedHTTPServer(Thread):
             try:
                 self.httpd = _StoppableHTTPServer(
                     (self._ip, self._port), _DefinedRequestHandler)
-            except Exception, e:
+            except Exception as e:
                 # I have no idea why this code works.
                 # It is a copy paste from:
                 # http://www.ianlewis.org/en/testing-using-mocked-server
@@ -203,13 +210,13 @@ class HTTPServerContext(object):
             # Stop waiting for data from new connection.
             # This is done by sending a special QUIT request without
             # waiting for data.
-            conn = httplib.HTTPConnection("%s:%d" % (self.ip, self.port))
+            conn = http.client.HTTPConnection("%s:%d" % (self.ip, self.port))
             conn.request("QUIT", "/")
             conn.getresponse()
         self.server.httpd.server_close()
 
 
-class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler, object):
+class _DefinedRequestHandler(http.server.BaseHTTPRequestHandler, object):
     """
     A request handler which act based on pre-defined responses.
 
@@ -225,7 +232,7 @@ class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler, object):
 
     def __init__(self, request, client_address, server):
         if self.debug:
-            print 'New connection %s.' % (client_address,)
+            print('New connection %s.' % (client_address,))
         # Register current connection on server.
         server.active_connection = self
         try:
@@ -309,8 +316,8 @@ class _DefinedRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         """
         if not self.debug:
             return
-        print '\nGot %s:%s - %s\n' % (
-            self.command, self.path, message)
+        print('\nGot %s:%s - %s\n' % (
+            self.command, self.path, message))
 
     def _sendReponse(self, response):
         """
@@ -455,7 +462,7 @@ class ChevahCommonsFactory(object):
         """
         Return a unique (per session) ASCII string.
         """
-        return 'ascii_str' + str(self.getUniqueInteger())
+        return ('ascii_str' + str(self.getUniqueInteger())).encode('ascii')
 
     def TCPPort(self, factory=None, address='', port=1234):
         """
@@ -495,7 +502,7 @@ class ChevahCommonsFactory(object):
         """
         The account under which this process is executed.
         """
-        return unicode(os.environ['USER'])
+        return str(os.environ['USER'])
 
     def md5(self, content):
         """
@@ -511,7 +518,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'str' + unicode(self.getUniqueInteger())
+        base = u'str' + str(self.getUniqueInteger())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
@@ -558,7 +565,7 @@ class ChevahCommonsFactory(object):
 
     def makeFilename(self, length=32, prefix=u'', suffix=u''):
         '''Return a random valid filename.'''
-        name = unicode(self.getUniqueInteger()) + TEST_NAME_MARKER
+        name = str(self.getUniqueInteger()) + TEST_NAME_MARKER
         return prefix + name + ('a' * (length - len(name))) + suffix
 
     def makeIPv4Address(self, host='localhost', port=None, protocol='TCP'):

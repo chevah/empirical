@@ -28,6 +28,10 @@ class PublishCommand(Command):
         upload_command.repository = u'chevah'
         self.run_command('upload')
 
+dependencies = [
+    'chevah-compat',
+    'future',
+    ]
 
 distribution = setup(
     name="chevah-empirical",
@@ -50,4 +54,5 @@ distribution = setup(
     cmdclass={
         'publish': PublishCommand,
         },
+    install_requires=dependencies,
     )

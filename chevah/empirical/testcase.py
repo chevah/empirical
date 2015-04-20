@@ -4,8 +4,15 @@
 """
 TestCase used for Chevah project.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import next
+from builtins import str
+from builtins import range
+from builtins import object
 from contextlib import contextmanager
-from StringIO import StringIO
+from io import StringIO
 import collections
 import inspect
 import threading
@@ -29,6 +36,18 @@ except ImportError:
     _UnixWaker = None
     _SIGCHLDWaker = None
 
+from chevah.compat import (
+    DefaultAvatar,
+    LocalFilesystem,
+    process_capabilities,
+    system_users,
+    SuperAvatar,
+    )
+from chevah.empirical.mockup import factory
+from chevah.empirical.constants import (
+    TEST_NAME_MARKER,
+    )
+
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Python 2.7.
 if sys.version_info[0:2] < (2, 7):
@@ -43,19 +62,6 @@ try:
 except ImportError:
     # Zope support is optional.
     pass
-
-from chevah.compat import (
-    DefaultAvatar,
-    LocalFilesystem,
-    process_capabilities,
-    system_users,
-    SuperAvatar,
-    )
-from chevah.empirical.mockup import factory
-from chevah.empirical.constants import (
-    TEST_NAME_MARKER,
-    )
-
 
 try:
     # Import reactor last in case some other modules are changing the reactor.
@@ -108,7 +114,7 @@ class TwistedTestCase(TestCase):
         Retrieve the 'success' member from the None test case.
         """
         success = None
-        for i in xrange(2, 6):
+        for i in range(2, 6):
             try:
                 success = inspect.stack()[i][0].f_locals['success']
                 break
@@ -145,7 +151,7 @@ class TwistedTestCase(TestCase):
         exists.
         """
         if not reactor.threadpool:
-            return None
+            return 0
         else:
             return reactor.threadpool.q.qsize()
 
@@ -155,7 +161,7 @@ class TwistedTestCase(TestCase):
         exists.
         """
         if not reactor.threadpool:
-            return None
+            return 0
         else:
             return reactor.threadpool.threads
 
@@ -165,7 +171,7 @@ class TwistedTestCase(TestCase):
         exists.
         """
         if not reactor.threadpool:
-            return None
+            return 0
         else:
             return reactor.threadpool.working
 
@@ -783,7 +789,7 @@ class ChevahTestCase(TwistedTestCase):
         for check in checks:
             try:
                 check()
-            except AssertionError, error:
+            except AssertionError as error:
                 errors.append(error.message)
 
         if errors:
@@ -823,13 +829,13 @@ class ChevahTestCase(TwistedTestCase):
         cls._drop_user = drop_user
         os.environ['DROP_USER'] = drop_user
 
-        if 'LOGNAME' in os.environ and not 'USER' in os.environ:
+        if 'LOGNAME' in os.environ and 'USER' not in os.environ:
             os.environ['USER'] = os.environ['LOGNAME']
 
-        if 'USER' in os.environ and not 'USERNAME' in os.environ:
+        if 'USER' in os.environ and 'USERNAME' not in os.environ:
             os.environ['USERNAME'] = os.environ['USER']
 
-        if 'USERNAME' in os.environ and not 'USER' in os.environ:
+        if 'USERNAME' in os.environ and 'USER' not in os.environ:
             os.environ['USER'] = os.environ['USERNAME']
 
         cls._environ_user = os.environ['USER']
@@ -888,7 +894,7 @@ class ChevahTestCase(TwistedTestCase):
         try:
             # We use shutdown to force closing the socket.
             test_socket.shutdown(socket.SHUT_RDWR)
-        except socket.error, error:
+        except socket.error as error:
             # When we force close the socket, we might get some errors
             # that the socket is already closed... have no idea why.
             if self.os_name == 'solaris' and error.args[0] == 134:
@@ -1018,12 +1024,12 @@ class ChevahTestCase(TwistedTestCase):
 
     def assertIsFalse(self, value):
         '''Raise an exception if value is not 'False'.'''
-        if not value is False:
+        if value is not False:
             raise AssertionError('%s is not False.' % str(value))
 
     def assertIsTrue(self, value):
         '''Raise an exception if value is not 'True'.'''
-        if not value is True:
+        if value is not True:
             raise AssertionError('%s is not True.' % str(value))
 
     def assertIsInstance(self, expected_type, value, msg=None):
@@ -1049,7 +1055,7 @@ class ChevahTestCase(TwistedTestCase):
             sock_name = test_socket.getsockname()
             test_socket.shutdown(socket.SHUT_RDWR)
             if debug:
-                print 'Connected as: %s:%d' % (sock_name[0], sock_name[1])
+                print('Connected as: %s:%d' % (sock_name[0], sock_name[1]))
         except:
             raise AssertionError(
                 'It seems that no one is listening on %s:%d' % (
@@ -1075,19 +1081,19 @@ class ChevahTestCase(TwistedTestCase):
         '''Extra checks for assert equal.'''
         try:
             super(ChevahTestCase, self).assertEqual(first, second, msg)
-        except AssertionError, error:
+        except AssertionError as error:
             message = error.message
-            if isinstance(message, unicode):
+            if isinstance(message, str):
                 message = message.encode('utf-8')
             raise AssertionError(message)
 
-        if (type(first) == unicode and type(second) == str):
+        if (isinstance(first, str) and not isinstance(second, str)):
             if not msg:
                 msg = u'Type of "%s" is unicode while for "%s" is str.' % (
                     first, second)
             raise AssertionError(msg.encode('utf-8'))
 
-        if (type(first) == str and type(second) == unicode):
+        if (not isinstance(first, str) and isinstance(second, str)):
             if not msg:
                 msg = u'Type of "%s" is str while for "%s" is unicode.' % (
                     first, second)
@@ -1103,7 +1109,7 @@ class ChevahTestCase(TwistedTestCase):
 
         if failure.type is not failure_class:
             message = u'Failure %s is not of type %s' % (
-                unicode(failure), failure_class)
+                str(failure), failure_class)
             raise AssertionError(message.encode('utf-8'))
 
     def assertFailureID(self, failure_id, failure_or_deferred):
@@ -1122,7 +1128,7 @@ class ChevahTestCase(TwistedTestCase):
         except:
             actual_id = getattr(failure.value, 'event_id')
 
-        if not isinstance(actual_id, unicode):
+        if not isinstance(actual_id, str):
             raise AssertionError('Failure ID must be unicode.')
 
         if actual_id != failure_id:
@@ -1157,12 +1163,12 @@ class ChevahTestCase(TwistedTestCase):
         """
         Helper for sharing same code between various data checkers.
         """
-        for key, value in expected_data.iteritems():
+        for key, value in expected_data.items():
             try:
                 current_value = current_data[key]
 
                 if isinstance(value, Contains):
-                    if not value.value in current_value:
+                    if value.value not in current_value:
                         message = (
                             u'%s %s, for data "%s" does not contains "%s", '
                             u'but is "%s"') % (
@@ -1193,7 +1199,7 @@ class ChevahTestCase(TwistedTestCase):
         if isinstance(target, collections.Iterable):
             iterator = iter(target)
             try:
-                iterator.next()
+                next(iterator)
             except StopIteration:
                 pass
             else:
@@ -1226,7 +1232,7 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise AssertionError if source is not in target.
         """
-        if not source in target:
+        if source not in target:
             message = u'%s not in %s.' % (repr(source), repr(target))
             raise AssertionError(message.encode('utf-8'))
 
@@ -1234,7 +1240,7 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise AssertionError if source does not contain `token`.
         """
-        if not token in source:
+        if token not in source:
             message = u'%s does not contains %s.' % (
                 repr(source), repr(token))
             raise AssertionError(message.encode('utf-8'))
@@ -1251,7 +1257,7 @@ class ChevahTestCase(TwistedTestCase):
         """
         Raise AssertionError if pattern is not found in source.
         """
-        if not pattern in pattern:
+        if pattern not in pattern:
             message = u'%s not contained in\n%s.' % (
                 repr(pattern), repr(source))
             raise AssertionError(message.encode('utf-8'))

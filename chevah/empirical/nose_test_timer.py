@@ -2,6 +2,10 @@
 This plugin provides test timings to identify which tests might be
 taking the most.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import range
 
 import operator
 from time import time
@@ -92,7 +96,7 @@ class TestTimer(Plugin):
             return
 
         inner_time_list = sorted(
-            self._timed_tests['inner'].iteritems(),
+            iter(self._timed_tests['inner'].items()),
             key=operator.itemgetter(1),
             )
 
@@ -115,7 +119,7 @@ class TestTimer(Plugin):
         stream.writeln('-' * 70)
         stream.writeln('Time usage top %s report:\n' % (TOP_COUNT))
 
-        for index in xrange(tests_count - 1, test_start - 1, -1):
+        for index in range(tests_count - 1, test_start - 1, -1):
             test, time_taken = inner_time_list[index]
             outer_time = self._timed_tests['outer'][test]
             stream.writeln("%0.4f:%0.4f: %s" % (time_taken, outer_time, test))

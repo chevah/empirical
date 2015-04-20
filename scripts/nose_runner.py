@@ -15,12 +15,13 @@ from chevah.empirical.nose_run_reporter import RunReporter
 
 from chevah.empirical import EmpiricalTestCase
 
-if __name__ == '__main__':
-    '''Execute the nose test runner.
+def main():
+    """
+    Execute the nose test runner.
 
     Drop privileges and alter the system argument to remove the
     userid and group id arguments that are only required for the test.
-    '''
+    """
     if len(sys.argv) < 2:
         print (
             u'Run the test suite using drop privileges username as first '
@@ -56,3 +57,6 @@ if __name__ == '__main__':
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(error.code)
+
+if __name__ == '__main__':
+    main()

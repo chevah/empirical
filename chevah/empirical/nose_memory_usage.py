@@ -1,6 +1,10 @@
 """
 This plugin provides memory usage .
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import range
 import operator
 
 import nose
@@ -48,7 +52,7 @@ class MemoryUsage(Plugin):
             return
 
         sorted_usage = sorted(
-            self._memory_usage.iteritems(),
+            iter(self._memory_usage.items()),
             key=operator.itemgetter(1),
             )
 
@@ -63,7 +67,7 @@ class MemoryUsage(Plugin):
         if test_start < 0:
             test_start = 0
 
-        for index in xrange(tests_count - 1, test_start - 1, -1):
+        for index in range(tests_count - 1, test_start - 1, -1):
             test_id, memory_usage = sorted_usage[index]
             stream.writeln("%0.4f: %s" % (memory_usage, test_id))
 

@@ -3,6 +3,9 @@
 """
 Tests for testing filesystem
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 from chevah.compat import (
     system_users,
     )
