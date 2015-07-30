@@ -64,22 +64,46 @@ class TestTimer(Plugin):
         self._timer = {'inner': 0, 'outer': 0}
 
     def startTest(self, test):
-        '''Initializes a timer before starting a test.
+        """
+        Initializes a timer before starting a test.
 
         We wrap the actual testing method to have a more accurate
         measurement.
-        '''
+        """
         self._timer = {'inner': 0, 'outer': 0}
-        self._initial_target_test = getattr(
+        initial_target_test = getattr(
             test.test, test.test._testMethodName
             )
 
-        def wrapped_test():
-            self._set_start_time(kind='inner')
-            self._initial_target_test()
-            self._set_end_time(test=test, time_now=time(), kind='inner')
+        class TimedTest(object):
+            def __init__(self, timer, target):
+                self.__target = target
+                self.__timer = timer
 
-        setattr(test.test, test.test._testMethodName, wrapped_test)
+            def __call__(self):
+                """
+                Wrap the target test in a timer.
+                """
+                self.__timer._set_start_time(kind='inner')
+                try:
+                    self.__target()
+                finally:
+                    # Make sure end timer is set even on failures.
+                    self.__timer._set_end_time(
+                        test=test, time_now=time(), kind='inner')
+
+            def __getattr__(self, name):
+                try:
+                    return self.__dict__[name]
+                except:
+                    return getattr(self.__target, name)
+
+        # Replace the original test with a wrapper which records its execution.
+        setattr(
+            test.test,
+            test.test._testMethodName,
+            TimedTest(self, initial_target_test),
+            )
 
         self._set_start_time(kind='outer')
 

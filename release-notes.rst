@@ -2,6 +2,24 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.35.1 - 08/07/2015
+-------------------
+
+* Fix timer nose plugin to proxy attributes of the timed method.
+
+
+0.35.0 - 26/04/2015
+-------------------
+
+* Initial steps for py3 compatibility.
+
+
+0.34.5 - 08/07/2015
+-------------------
+
+* Backport fix from 0.35.1 for py3 incompatible code.
+
+
 0.34.4 - 12/03/2015
 -------------------
 
