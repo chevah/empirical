@@ -41,9 +41,9 @@ class ErrorWithID(Exception):
         return self._id
 
 
-class TestEmpiricalTestCase(EmpiricalTestCase):
+class TestTwistedTestCase(EmpiricalTestCase):
     """
-    General tests for EmpiricalTestCase.
+    General tests for TwistedTestCase as part of EmpiricalTestCase.
     """
 
     def test_runDeferred_non_deferred(self):
@@ -269,6 +269,85 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
 
         with self.assertRaises(AssertionError):
             self.failureResultOf(deferred)
+
+    def test_executeReactor_delayedCalls_chained(self):
+        """
+        It will wait for all delayed calls to execute, included delayed
+        which are later created by another delayed call.
+        """
+        self.called = False
+
+        def last_call():
+            self.called = True
+        reactor.callLater(0.01, lambda: reactor.callLater(0.01, last_call))
+
+        self.executeReactor()
+
+        self.assertTrue(self.called)
+
+    def test_executeReactor_threadpool(self):
+        """
+        It will wait for all workers from threadpool.
+        """
+        self.called = False
+
+        def last_call():
+            time.sleep(0.1)
+            self.called = True
+
+        deferred = threads.deferToThread(last_call)
+
+        self.executeReactor()
+        self.assertTrue(self.called)
+        self.assertTrue(deferred.called)
+
+    def test_assertReactorIsClean_excepted_deferred(self):
+        """
+        Will raise an error if a delayed call is still on the reactor queue.
+        """
+        def much_later():
+            """
+            This is here to have a name.
+            """
+            pass
+
+        delayed_call = reactor.callLater(10, much_later)
+
+        with self.assertRaises(AssertionError) as context:
+            self.assertReactorIsClean()
+
+        self.assertEqual(
+            u'Reactor is not clean. delayed calls: much_later',
+            context.exception.args[0],
+            )
+        # Cancel and remove it so that the general test will not fail.
+        delayed_call.cancel()
+        self.executeReactor()
+
+    def test_assertReactorIsClean_excepted_delayed_calls(self):
+        """
+        Will not raise an error if delayed call should be ignored.
+        """
+        def much_later():
+            """
+            This is here to have a name.
+            """
+            pass
+
+        self.EXCEPTED_DELAYED_CALLS = ['much_later']
+
+        delayed_call = reactor.callLater(10, much_later)
+
+        self.assertReactorIsClean()
+        # Cancel and remove it so that other tests will not fail.
+        delayed_call.cancel()
+        self.executeReactor()
+
+
+class TestEmpiricalTestCase(EmpiricalTestCase):
+    """
+    General tests for EmpiricalTestCase.
+    """
 
     def test_cleanTemporaryFolder_empty(self):
         """
@@ -560,37 +639,6 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
             target_segments=mk.fs.temp_segments,
             link_segments=self.test_segments,
             )
-
-    def test_executeReactor_delayedCalls_chained(self):
-        """
-        It will wait for all delayed calls to execute, included delayed
-        which are later created by another delayed call.
-        """
-        self.called = False
-
-        def last_call():
-            self.called = True
-        reactor.callLater(0.01, lambda: reactor.callLater(0.01, last_call))
-
-        self.executeReactor()
-
-        self.assertTrue(self.called)
-
-    def test_executeReactor_threadpool(self):
-        """
-        It will wait for all workers from threadpool.
-        """
-        self.called = False
-
-        def last_call():
-            time.sleep(0.1)
-            self.called = True
-
-        deferred = threads.deferToThread(last_call)
-
-        self.executeReactor()
-        self.assertTrue(self.called)
-        self.assertTrue(deferred.called)
 
     def test_assertIsEmpty(self):
         """
