@@ -93,9 +93,9 @@ class TwistedTestCase(TestCase):
     tests.
     """
 
-    EXCEPTED_DELAYED_CALLS = [
-        '_resetLogDateTime',
-        ]
+    # List of names for delayed calls which should not be considered as
+    # required to wait for them when running the reactor.
+    EXCEPTED_DELAYED_CALLS = []
 
     EXCEPTED_READERS = [
         _UnixWaker,
@@ -332,10 +332,10 @@ class TwistedTestCase(TestCase):
 
         for delayed_call in reactor.getDelayedCalls():
             if delayed_call.active():
-                delayed_str = str(delayed_call).split()[-1][:-1]
+                delayed_str = self._getDelayedCallName(delayed_call)
                 if delayed_str in self.EXCEPTED_DELAYED_CALLS:
                     continue
-                raise_failure('delayed calls', delayed_call)
+                raise_failure('delayed calls', delayed_str)
 
     def runDeferred(
             self, deferred, timeout=1, debug=False, prevent_stop=False):
@@ -443,7 +443,10 @@ class TwistedTestCase(TestCase):
                 # We skip our own timeout call.
                 if delayed is self._reactor_timeout_call:
                     continue
-                delayed_str = str(delayed).split()[-1][:-1]
+                if not delayed.func:
+                    # Was already called.
+                    continue
+                delayed_str = self._getDelayedCallName(delayed)
                 is_exception = False
                 for excepted_callback in self.EXCEPTED_DELAYED_CALLS:
                     if excepted_callback in delayed_str:
@@ -488,6 +491,15 @@ class TwistedTestCase(TestCase):
                 continue
 
         self._shutdownTestReactor()
+
+    def _getDelayedCallName(self, delayed_call):
+        """
+        Return a string representation of the delayed call.
+        """
+        raw_name = str(delayed_call.func)
+        raw_name = raw_name.replace('<function ', '')
+        raw_name = raw_name.replace('<bound method ', '')
+        return raw_name.split(' ', 1)[0]
 
     def getDeferredFailure(
             self, deferred, timeout=1, debug=False, prevent_stop=False):

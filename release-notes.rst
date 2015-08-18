@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.36.0 - 13/08/2015
+-------------------
+
+* Fix EXCEPTED_DELAYED_CALLS in TwistedTestCase.
+
+
 0.35.1 - 08/07/2015
 -------------------
 
