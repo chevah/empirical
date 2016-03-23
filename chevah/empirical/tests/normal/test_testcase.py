@@ -318,7 +318,6 @@ class TestTwistedTestCase(EmpiricalTestCase):
 
         self.assertEqual(
             u'Reactor is not clean. delayed calls: much_later',
-            context.exception.args[0],
             )
         # Cancel and remove it so that the general test will not fail.
         delayed_call.cancel()
