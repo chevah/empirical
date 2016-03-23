@@ -2,6 +2,25 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.37.2 - 23/03/2016
+-------------------
+
+* Really remove code reusal as this needs a newer Twisted version.
+
+
+0.37.1 - 23/03/2016
+-------------------
+
+* Remove code reusal as this needs a newer Twisted version.
+
+
+0.37.0 - 23/03/2016
+-------------------
+
+* Allow removing files in Windows temp.
+* Reuse code from Twisted.
+
+
 0.36.0 - 13/08/2015
 -------------------
 

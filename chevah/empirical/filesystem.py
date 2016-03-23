@@ -219,6 +219,9 @@ class LocalTestFilesystem(LocalFilesystem):
             if os.name == 'nt':
                 if path == 'c:\\':
                     return False
+                # Allow the windows temp.
+                if path.lower().startswith('c:\\windows\\temp'):
+                    return True
                 # On Windows deny Windows or Program Files.
                 if 'Windows' in path:
                     return False
