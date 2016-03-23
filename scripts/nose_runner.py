@@ -1,9 +1,10 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Helper for executing nose as a separate process.
+"""
+Helper for executing nose as a separate process.
 
 This is needed since on Unix the tests are executed using sudo.
-'''
+"""
 import os
 import sys
 

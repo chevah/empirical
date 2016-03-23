@@ -213,12 +213,19 @@ class LocalTestFilesystem(LocalFilesystem):
                         )):
                     return False
             if os.name == 'nt':
-                if path == 'c:\\':
+                win_path = path.lower()
+                if win_path == 'c:\\':
                     return False
+                if (
+                    win_path.startswith('c:\\windows\\temp\\') and
+                    win_path != 'c:\\windows\\temp\\'
+                        ):
+                    # Allow children in windows\temp.
+                    return True
                 # On Windows deny Windows or Program Files.
-                if 'Windows' in path:
+                if '\\windows\\' in win_path:
                     return False
-                if 'Program Files' in path:
+                if '\\program files' in win_path:
                     return False
             return True
 

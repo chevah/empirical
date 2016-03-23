@@ -2,6 +2,30 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.34.10 - 23/03/2016
+-------------------
+
+* Relax folder cleaning rules.
+
+
+0.34.9 - 23/03/2016
+-------------------
+
+* Force windows temp-path outside of c:\Windows\Temp.
+
+
+0.34.8 - 23/03/2016
+-------------------
+
+* Re-write cleaning the c:\Windows\Temp dir.
+
+
+0.34.7 - 23/03/2016
+-------------------
+
+* Allow cleaning the c:\Windows\Temp dir.
+
+
 0.34.6 - 13/08/2015
 -------------------
 
