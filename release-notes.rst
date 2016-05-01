@@ -1,6 +1,11 @@
 Release notes for chevah.empirical
 ==================================
 
+0.34.11 - 2016-05-01
+--------------------
+
+* Add support for collecting coverage.
+
 
 0.34.10 - 23/03/2016
 -------------------
