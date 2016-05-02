@@ -1,0 +1,14 @@
+# Changes are disabled.
+coverage:
+  precision: 2
+  round: down
+  status:
+    patch:
+      enabled: yes
+      target: 100%
+    changes:
+      enabled: no
+
+comment:
+  layout: "header, diff, suggestions"
+  behavior: default
