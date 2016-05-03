@@ -22,7 +22,8 @@ def should_run_elevated_test():
     Return true if we can access privileged OS operations.
     """
     if not process_capabilities.impersonate_local_account:
-        return False
+        # This might not be hit under CI as it is executed under sudo.
+        return False  # pragma: no cover
 
     if not process_capabilities.get_home_folder:
         return False
@@ -38,7 +39,8 @@ def setup_package():
     # Initialize the testing OS.
     try:
         setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
-    except:
+    except:  # pragma: no cover
+        # Report some error if setup fails and rollback.
         import traceback
         error = traceback.format_exc()
         try:

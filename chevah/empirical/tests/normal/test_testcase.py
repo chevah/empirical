@@ -313,7 +313,6 @@ class TestTwistedTestCase(EmpiricalTestCase):
             """
             This is here to have a name.
             """
-            pass
 
         delayed_call = reactor.callLater(10, much_later)
 
@@ -336,7 +335,6 @@ class TestTwistedTestCase(EmpiricalTestCase):
             """
             This is here to have a name.
             """
-            pass
 
         self.EXCEPTED_DELAYED_CALLS = ['much_later']
 
@@ -608,7 +606,12 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         """
         Run test only when impersonate_local_account is True.
         """
-        if process_capabilities.impersonate_local_account is not True:
+        # We ignore the statements in this code from coverage,
+        # but we don't ignore the whole test to make sure that it is
+        # executed.
+        can_impersonate = (
+            process_capabilities.impersonate_local_account)  # pragma: no cover
+        if can_impersonate is not True:  # pragma: no cover
             raise AssertionError(
                 'This should be called only when impersonate_local_account '
                 'is True.'

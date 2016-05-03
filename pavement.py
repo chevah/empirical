@@ -10,6 +10,8 @@ import warnings
 from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
+    coverage_prepare,
+    coverage_publish,
     default,
     github,
     harness,
@@ -20,6 +22,9 @@ from brink.pavement_commons import (
     pave,
     pqm,
     SETUP,
+    test_coverage,
+    test_os_dependent,
+    test_os_independent,
     test_python,
     test_remote,
     test_normal,
@@ -34,7 +39,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'twisted==12.1.0.chevah5',
+    'twisted==15.5.0.chevah3',
     'chevah-compat==0.24.0',
     # Py3 compat.
     'future',
@@ -46,7 +51,7 @@ RUN_PACKAGES = [
 
 BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
-    'buildbot==0.8.11.pre.143.gac88f1b.c2',
+    'buildbot==0.8.11.c7',
 
     # For PQM
     'smmap==0.8.2',
@@ -71,6 +76,9 @@ TEST_PACKAGES = [
     'nose==1.3.6',
     'mock',
 
+    'coverage==4.0.3',
+    'codecov==2.0.3',
+
     # Used to test HTTPServerContext
     'requests==2.5.3',
 
@@ -80,6 +88,8 @@ TEST_PACKAGES = [
 # Make pylint shut up.
 buildbot_list
 buildbot_try
+coverage_prepare
+coverage_publish
 default
 github
 harness
@@ -88,6 +98,9 @@ lint
 merge_init
 merge_commit
 pqm
+test_coverage
+test_os_dependent
+test_os_independent
 test_python
 test_remote
 test_normal
@@ -109,6 +122,13 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
 SETUP['test']['elevated'] = 'elevated'
+
+
+@task
+def update_setup():
+    """
+    Does nothing.
+    """
 
 
 @task
@@ -152,6 +172,7 @@ def deps_build():
 
 
 @task
+@needs('coverage_prepare')
 def build(platform=None, python_version=None):
     """
     Copy new source code to build folder.
@@ -173,21 +194,10 @@ def build(platform=None, python_version=None):
 
 
 @task
-@needs('deps_testing', 'test_python')
-@consume_args
-def test_os_dependent(args):
+def test_documentation():
     """
-    Run os dependent tests.
+    Does nothing.
     """
-
-
-@task
-@needs('deps_build')
-def test_os_independent():
-    """
-    Run os independent tests.
-    """
-    call_task('lint', options={'all': True})
 
 
 @consume_args
@@ -219,7 +229,13 @@ def test_ci(args):
     if test_type == 'py3':
         return call_task('test_py3', args=args)
 
-    return call_task('test_os_dependent', args=args)
+    call_task('test_os_dependent', args=args)
+
+    # Only publish coverage for os dependent tests and if coverage is enabled
+    # and we have a token.
+    codecov_token = os.environ.get('CODECOV_TOKEN', '')
+    if codecov_token:
+        call_task('coverage_publish')
 
 
 @task

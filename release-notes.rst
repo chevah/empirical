@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.38.1 - 2016-05-01
+-------------------
+
+* Use default `.coveragerc` configuration name.
+
+
+0.38.0 - 2016-05-01
+-------------------
+
+* Add support for code coverage collection when Codecov token is present.
+
+
 0.37.2 - 23/03/2016
 -------------------
 

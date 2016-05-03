@@ -1,6 +1,9 @@
 chevah-empirical
 ================
 
+.. image:: https://codecov.io/gh/chevah/empirical/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/chevah/empirical
+
 Testing helpers for Chevah project.
 
 It depends on:
