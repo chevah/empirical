@@ -115,9 +115,9 @@ SETUP['pocket-lint']['include_files'] = [
     'pavement.py',
     'release-notes.rst',
     ]
-SETUP['buildbot']['server'] = 'build.chevah.com'
-SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
-SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
+SETUP['buildbot']['server'] = 'buildbot.chevah.com'
+SETUP['buildbot']['web_url'] = 'http://buildbot.chevah.com:10433'
+SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
 SETUP['pocket-lint']['include_folders'] = ['chevah/empirical']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.empirical.tests'
