@@ -37,7 +37,7 @@ class TestTimer(Plugin):
             # test died before it ran (probably error in setup())
             # or success/failure added before test started probably
             # due to custom TestResult munging
-            taken = 0.0
+            taken = 0.0  # pragma: no cover
         return taken
 
     def _set_start_time(self, kind):
@@ -112,7 +112,7 @@ class TestTimer(Plugin):
 
     def report(self, stream):
         """Report the test times"""
-        if not self.enabled:
+        if not self.enabled:  # pragma: no cover
             return
 
         inner_time_list = sorted(

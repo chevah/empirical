@@ -144,6 +144,9 @@ class HTTPServerContext(object):
          * responses - A list of ResponseDefinition defining the behavior of
                         this server.
         """
+        self._previous_valid_responses = _DefinedRequestHandler.valid_responses
+        self._previous_first_client = _DefinedRequestHandler.first_client
+
         # Since we can not pass an instance of _DefinedRequestHandler
         # we do on the fly patching here.
         _DefinedRequestHandler.debug = debug
@@ -170,6 +173,9 @@ class HTTPServerContext(object):
         # _DefinedRequestHandler initialization is outside of control so
         # we share state as class members. To free memory we need to clean it.
         _DefinedRequestHandler.cleanGlobals()
+
+        _DefinedRequestHandler.valid_responses = self._previous_valid_responses
+        _DefinedRequestHandler.first_client = self._previous_first_client
 
         self.stopServer()
         self.server.join(1)
@@ -407,6 +413,14 @@ class ResponseDefinition(object):
             self.response_code, self.response_message,
             self.persistent,
             )
+
+    def updateReponseContent(self, content):
+        """
+        Will update the content returned to the server.
+        """
+        self.test_response_content = content
+        response_length = len(content)
+        self.response_length = str(response_length)
 
 
 class TestSSLContextFactory(object):

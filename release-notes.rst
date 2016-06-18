@@ -1,6 +1,13 @@
 Release notes for chevah.empirical
 ==================================
 
+
+0.34.12 - 2016-06-18
+--------------------
+
+* Add support for nested HTTP server context.
+
+
 0.34.11 - 2016-05-01
 --------------------
 
