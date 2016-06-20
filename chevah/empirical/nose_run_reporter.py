@@ -28,7 +28,7 @@ class RunReporter(Plugin):
 
     def finalize(self, result):
         """Report the test times"""
-        if not self.enabled:
+        if not self.enabled:  # pragma: no cover
             return
 
         def format_test_id(test_id):
@@ -39,14 +39,14 @@ class RunReporter(Plugin):
         for test in result.skipped:
             result.stream.write(format_test_id(test[0].id()) + '\n')
 
-        if len(result.errors):
+        if len(result.errors):  # pragma: no cover
             result.stream.write('\nError tests:\n')
-        for test in result.errors:
+        for test in result.errors:  # pragma: no cover
             result.stream.write(format_test_id(test[0].id()) + '\n')
 
-        if len(result.failures):
+        if len(result.failures):  # pragma: no cover
             result.stream.write('\nFailed tests:\n')
-        for test in result.failures:
+        for test in result.failures:  # pragma: no cover
             result.stream.write(format_test_id(test[0].id()) + '\n')
 
         result.stream.write('\n')

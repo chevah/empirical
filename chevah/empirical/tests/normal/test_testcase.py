@@ -57,7 +57,7 @@ class TestTwistedTestCase(EmpiricalTestCase):
         Ex. a delayedCall
         """
         scheduler = Clock()
-        delayed_call = scheduler.callLater(0, lambda: None)
+        delayed_call = scheduler.callLater(0, lambda: None)  # pragma: no cover
 
         with self.assertRaises(AssertionError) as context:
             self.runDeferred(delayed_call)
@@ -309,7 +309,7 @@ class TestTwistedTestCase(EmpiricalTestCase):
         """
         Will raise an error if a delayed call is still on the reactor queue.
         """
-        def much_later():
+        def much_later():  # pragma: no cover
             """
             This is here to have a name.
             """
@@ -331,7 +331,7 @@ class TestTwistedTestCase(EmpiricalTestCase):
         """
         Will not raise an error if delayed call should be ignored.
         """
-        def much_later():
+        def much_later():  # pragma: no cover
             """
             This is here to have a name.
             """

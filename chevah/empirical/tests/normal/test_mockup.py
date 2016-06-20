@@ -24,12 +24,17 @@ class TestHTTPServerContext(EmpiricalTestCase):
 
     def getPage(
             self, location, method='GET', data=None,
-            persistent=True, session=None):
+            persistent=True, session=None,
+            http_server=None,
+            ):
         """
         Open a page using default mocked server.
         """
         if session is None:
             session = requests
+
+        if http_server is None:
+            http_server = self.httpd
 
         if method == 'POST':
             request_method = session.post
@@ -41,8 +46,7 @@ class TestHTTPServerContext(EmpiricalTestCase):
             final_headers['connection'] = 'close'
 
         return request_method(
-            'http://%s:%d%s' % (
-                self.httpd.ip, self.httpd.port, location),
+            'http://%s:%d%s' % (http_server.ip, http_server.port, location),
             data=data,
             headers=final_headers,
             stream=False,
@@ -204,6 +208,52 @@ class TestHTTPServerContext(EmpiricalTestCase):
             response = self.getPage('/url', method='POST', data='other-body')
 
         self.assertEqual(404, response.status_code)
+
+    def test_nested_calls(self):
+        """
+        Multiple contexts can be nested.
+        """
+        first_response = ResponseDefinition(
+            url='/url',
+            persistent=True,
+            response_content='first-level'
+            )
+        nested_response = ResponseDefinition(
+            url='/url',
+            persistent=False,
+            response_content='nested-level'
+            )
+
+        with HTTPServerContext([first_response]) as self.httpd:
+            with HTTPServerContext([nested_response]) as nested_httpd:
+                result = self.getPage(
+                    '/url', persistent=False, http_server=nested_httpd)
+
+                self.assertEqual(200, result.status_code)
+                self.assertEqual('nested-level', result.content)
+
+            result = self.getPage('/url', persistent=True)
+
+        self.assertEqual(200, result.status_code)
+        self.assertEqual('first-level', result.content)
+
+    def test_updateReponseContent(self):
+        """
+        The response content can be updated after initialization.
+        """
+        response = ResponseDefinition(
+            url='/url',
+            persistent=False,
+            response_content='first-content-of-different-length'
+            )
+        with HTTPServerContext([response]) as self.httpd:
+            response.updateReponseContent('updated-content')
+
+            result = self.getPage('/url', persistent=False)
+
+        self.assertEqual(200, result.status_code)
+        self.assertEqual('updated-content', result.content)
+        self.assertEqual('15', result.headers['content-length'])
 
 
 class TestFactory(EmpiricalTestCase):

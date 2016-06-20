@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.39.0 - 18/06/2016
+-------------------
+
+* Allow making nested HTTP server context calls.
+* Allow updating a mocked HTTP response after creating.
+
+
 0.38.1 - 2016-05-01
 -------------------
 
