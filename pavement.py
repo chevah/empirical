@@ -39,11 +39,11 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'twisted==15.5.0.chevah3',
+    'twisted==15.5.0.chevah4',
     'chevah-compat==0.24.0',
     # Py3 compat.
     'future',
-    # Reqired for compat testing.
+    # Required for compat testing.
     'unidecode',
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -132,42 +132,15 @@ def update_setup():
 
 
 @task
-@needs('deps_testing', 'deps_build')
 def deps():
     """
     Install all dependencies.
     """
-
-
-@task
-def deps_testing():
-    """
-    Install dependencies for testing.
-    """
-    print('Installing testing dependencies to %s...' % (pave.path.build))
+    print('Installing  dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
-        arguments=RUN_PACKAGES,
-        silent=True,
-        )
-    pave.pip(
-        command='install',
-        arguments=TEST_PACKAGES,
-        silent=True,
-        )
-
-
-@task
-@needs('deps_testing')
-def deps_build():
-    """
-    Install dependencies for build environment.
-    """
-    print('Installing build dependencies to %s...' % (pave.path.build))
-    pave.pip(
-        command='install',
-        arguments=BUILD_PACKAGES,
-        silent=True,
+        arguments=RUN_PACKAGES + TEST_PACKAGES + BUILD_PACKAGES,
+        silent=False,
         )
 
 

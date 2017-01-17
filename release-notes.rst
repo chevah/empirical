@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.40.0 - 05/01/2017
+-------------------
+
+* Add `bytes` method for generating a non UTF-8 decodable byte array.
+
+
 0.39.0 - 18/06/2016
 -------------------
 
