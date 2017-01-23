@@ -87,9 +87,11 @@ def onCapability(name, value):
 
 def onAdminPrivileges(present):
     """
-    Run test only if administrator privileges are available on the buildslave.
+    Run test only if administrator privileges match the `present` value on
+    the machine running the tests.
 
-    For the moment only Windows 2003 and Windows XP build slaves lack this.
+    For the moment only Windows 2003 and Windows XP build slaves execute the
+    tests suite with a regular account.
     """
     hostname = gethostname()
     is_running_as_admin = 'win-2003' in hostname or 'win-xp' in hostname
