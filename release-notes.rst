@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.41.0 - 23/01/2017
+-------------------
+
+* Add conditional for administrator privileges present or missing on the
+  machine running the tests.
+
+
 0.40.0 - 05/01/2017
 -------------------
 
