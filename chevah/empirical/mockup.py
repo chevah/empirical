@@ -288,7 +288,7 @@ class _DefinedRequestHandler(http.server.BaseHTTPRequestHandler, object):
         response = self._matchResponse()
         if response:
             self._debug(response)
-            self._sendReponse(response)
+            self._sendResponse(response)
             self._debug('Close-connection: %s' % (self.close_connection,))
             return
 
@@ -325,7 +325,7 @@ class _DefinedRequestHandler(http.server.BaseHTTPRequestHandler, object):
         print('\nGot %s:%s - %s\n' % (
             self.command, self.path, message))
 
-    def _sendReponse(self, response):
+    def _sendResponse(self, response):
         """
         Send response to client.
         """
@@ -477,6 +477,16 @@ class ChevahCommonsFactory(object):
         Return a unique (per session) ASCII string.
         """
         return ('ascii_str' + str(self.getUniqueInteger())).encode('ascii')
+
+    def bytes(self, size=8):
+        """
+        Returns a bytes array with random values that cannot be decoded
+        as UTF-8 or UTF-16.
+        """
+        result = bytearray(b'\xff')
+        for _ in range(max(1, size - 1)):
+            result.append(random.getrandbits(4))
+        return result
 
     def TCPPort(self, factory=None, address='', port=1234):
         """
